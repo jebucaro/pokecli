@@ -1,0 +1,36 @@
+[project]
+name = "pokecli"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "Jonathan Búcaro", email = "jebucaro@users.noreply.github.com" }
+]
+requires-python = ">=3.12"
+dependencies = [
+    "typer>=0.12",
+    "pydantic>=2.0",
+    "httpx>=0.27",
+    "tinydb>=4.8",
+    "rich>=13.0",
+]
+
+[project.scripts]
+pokecli = "pokecli:main"
+
+[build-system]
+requires = ["uv_build>=0.10.9,<0.11.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "pre-commit>=4.5.1",
+    "ruff>=0.15.7",
+]
+test = [
+    "pytest>=8.0",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
