@@ -1,13 +1,11 @@
-import httpx
 import typer
 from pydantic import ValidationError
 from rich.console import Console
 
-from pokecli.cache.store import CacheStore
+from pokecli.commands._utils import fetch_list, fetch_resource
 from pokecli.config import DEFAULT_LIMIT, DEFAULT_OFFSET
 from pokecli.display.common import render_json, render_list
 from pokecli.display.item import render_item
-from pokecli.models.common import ListResult
 from pokecli.models.item import Item
 
 app = typer.Typer(help="Search and browse Items.")
@@ -26,31 +24,16 @@ def get(
 ) -> None:
     """Get detailed information about an Item."""
     client = ctx.obj["client"]
-    with CacheStore() as cache:
-        key = name_or_id.lower()
-        data = None if no_cache else cache.get("item", key)
-        if data is None:
-            try:
-                data = client.get_resource("item", name_or_id)
-            except httpx.HTTPStatusError as e:
-                if e.response.status_code == 404:
-                    err_console.print(f"[red]Not found: '{name_or_id}'[/red]")
-                else:
-                    err_console.print(f"[red]API error: {e.response.status_code}[/red]")
-                raise typer.Exit(1)
-            except (httpx.ConnectError, httpx.TimeoutException):
-                err_console.print("[red]Network error: could not reach PokeAPI[/red]")
-                raise typer.Exit(1)
-            cache.set("item", key, data)
-        try:
-            item = Item.model_validate(data)
-        except ValidationError as e:
-            err_console.print(f"[red]Unexpected API response format:[/red]\n{e}")
-            raise typer.Exit(2)
-        if format == "json":
-            render_json(data, console)
-        else:
-            render_item(item, console)
+    data = fetch_resource(client, "item", name_or_id, no_cache, err_console)
+    try:
+        item = Item.model_validate(data)
+    except ValidationError as e:
+        err_console.print(f"[red]Unexpected API response format:[/red]\n{e}")
+        raise typer.Exit(2)
+    if format == "json":
+        render_json(item.model_dump(), console)
+    else:
+        render_item(item, console)
 
 
 @app.command(name="list")
@@ -61,10 +44,4 @@ def list_items(
 ) -> None:
     """List Items with pagination."""
     client = ctx.obj["client"]
-    try:
-        data = client.list_resource("item", limit, offset)
-    except (httpx.ConnectError, httpx.TimeoutException):
-        err_console.print("[red]Network error: could not reach PokeAPI[/red]")
-        raise typer.Exit(1)
-    result = ListResult.model_validate(data)
-    render_list(result, console)
+    render_list(fetch_list(client, "item", limit, offset, err_console), console)

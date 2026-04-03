@@ -1,7 +1,7 @@
 import typer
 
 from pokecli.api.client import PokeAPIClient
-from pokecli.commands import berry, cache, image, item, move, pokemon
+from pokecli.commands import berry, cache, image, install, item, move, pokemon
 
 app = typer.Typer(
     name="pokecli",
@@ -16,6 +16,7 @@ def root(ctx: typer.Context) -> None:
     ctx.obj["client"] = ctx.with_resource(PokeAPIClient())
 
 
+app.add_typer(install.app, name="install")
 app.add_typer(pokemon.app, name="pokemon")
 app.add_typer(berry.app, name="berry")
 app.add_typer(item.app, name="item")

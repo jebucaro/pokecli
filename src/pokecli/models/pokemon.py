@@ -37,6 +37,12 @@ class PokemonSprites(BaseModel):
     front_shiny_female: str | None = None
 
 
+class PokemonMoveEntry(BaseModel):
+    name: str
+    learn_method: str
+    level: int
+
+
 class Pokemon(BaseModel):
     model_config = ConfigDict(extra="ignore")
 
