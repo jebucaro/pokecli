@@ -6,6 +6,7 @@ from pydantic import ValidationError
 from rich.console import Console
 
 from pokecli.cache.store import CacheStore
+from pokecli.commands._helptext import OUTPUT_PATH, RESOURCE, RESOURCE_NAME_OR_ID, SPRITE_VARIANT
 from pokecli.models.pokemon import Pokemon
 
 app = typer.Typer(help="Download Pokemon images and sprites.")
@@ -27,16 +28,14 @@ SPRITE_VARIANTS = [
 def download(
     ctx: typer.Context,
     resource: str = typer.Argument(
-        ..., help=f"Resource type: {', '.join(SUPPORTED_RESOURCES)}"
+        ..., help=RESOURCE
     ),
-    name_or_id: str = typer.Argument(..., help="Name or ID of the resource"),
-    output: Path = typer.Option(
-        ..., "--output", "-o", help="Destination file path for the image"
-    ),
+    name_or_id: str = typer.Argument(..., help=RESOURCE_NAME_OR_ID),
+    output: Path = typer.Option(..., "--output", "-o", help=OUTPUT_PATH),
     variant: str = typer.Option(
         "front_default",
         "--variant",
-        help=f"Sprite variant: {', '.join(SPRITE_VARIANTS)}",
+        help=SPRITE_VARIANT,
     ),
 ) -> None:
     """Download a Pokemon sprite image to a local file."""
@@ -93,6 +92,11 @@ def download(
             err_console.print(f"[red]Failed to download image: {e}[/red]")
             raise typer.Exit(1)
 
-        output.parent.mkdir(parents=True, exist_ok=True)
-        output.write_bytes(image_bytes)
+        try:
+            output.parent.mkdir(parents=True, exist_ok=True)
+            output.write_bytes(image_bytes)
+        except OSError as e:
+            err_console.print(f"[red]Failed to save image to '{output}': {e}[/red]")
+            raise typer.Exit(1)
+
         console.print(f"[green]Saved to:[/green] {output.resolve()}")

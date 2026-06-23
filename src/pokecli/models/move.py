@@ -1,19 +1,13 @@
-from pydantic import BaseModel, ConfigDict
-
-from pokecli.models.common import NamedResource
+from pokecli.models.common import BasePokeModel, NamedResource
 
 
-class MoveEffectEntry(BaseModel):
-    model_config = ConfigDict(extra="ignore")
-
+class MoveEffectEntry(BasePokeModel):
     effect: str
     short_effect: str
     language: NamedResource
 
 
-class Move(BaseModel):
-    model_config = ConfigDict(extra="ignore")
-
+class Move(BasePokeModel):
     id: int
     name: str
     accuracy: int | None = None

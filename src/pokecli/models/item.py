@@ -1,27 +1,19 @@
-from pydantic import BaseModel, ConfigDict
-
-from pokecli.models.common import NamedResource
+from pokecli.models.common import BasePokeModel, NamedResource
 
 
-class ItemEffect(BaseModel):
-    model_config = ConfigDict(extra="ignore")
-
+class ItemEffect(BasePokeModel):
     effect: str
     short_effect: str
     language: NamedResource
 
 
-class ItemFlavorText(BaseModel):
-    model_config = ConfigDict(extra="ignore")
-
+class ItemFlavorText(BasePokeModel):
     text: str
     language: NamedResource
     version_group: NamedResource
 
 
-class Item(BaseModel):
-    model_config = ConfigDict(extra="ignore")
-
+class Item(BasePokeModel):
     id: int
     name: str
     cost: int

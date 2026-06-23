@@ -6,29 +6,8 @@ from rich.panel import Panel
 from rich.table import Table
 from rich.text import Text
 
-from pokecli.display.common import uses_unicode
+from pokecli.display.common import METHOD_COLORS, TYPE_COLORS, get_chars, uses_unicode
 from pokecli.models.pokemon import Pokemon, PokemonMoveEntry
-
-TYPE_COLORS: dict[str, str] = {
-    "normal": "grey70",
-    "fire": "bright_red",
-    "water": "blue",
-    "electric": "yellow",
-    "grass": "green",
-    "ice": "cyan",
-    "fighting": "red",
-    "poison": "magenta",
-    "ground": "yellow3",
-    "flying": "sky_blue2",
-    "psychic": "hot_pink",
-    "bug": "chartreuse3",
-    "rock": "dark_goldenrod",
-    "ghost": "medium_purple",
-    "dragon": "blue_violet",
-    "dark": "grey39",
-    "steel": "steel_blue",
-    "fairy": "light_pink1",
-}
 
 STAT_BAR_MAX = 255
 
@@ -80,7 +59,7 @@ def render_pokemon(pokemon: Pokemon, console: Console) -> None:
         if pa.is_hidden:
             label += " [dim](hidden)[/dim]"
         ability_parts.append(label)
-    abilities_line = "  ·  ".join(ability_parts)
+    abilities_line = f"  {get_chars(console).bullet}  ".join(ability_parts)
 
     # Sprites
     sprites = pokemon.sprites
@@ -108,14 +87,7 @@ def render_pokemon_moves(
     move_filter: str | None = None,
     method_filter: str | None = None,
 ) -> None:
-    _uses_unicode = uses_unicode(console)
-
-    METHOD_COLORS = {
-        "level-up": "green",
-        "machine": "cyan",
-        "tutor": "yellow",
-        "egg": "magenta",
-    }
+    chars = get_chars(console)
 
     if move_filter is not None and len(moves) == 1:
         m = moves[0]
@@ -127,12 +99,10 @@ def render_pokemon_moves(
         )
         return
 
-    dash = "\u2014" if _uses_unicode else "-"
-
     if method_filter is not None:
-        title = f"{name.capitalize()} {dash} {method_filter} moves ({len(moves)})"
+        title = f"{name.capitalize()} {chars.dash} {method_filter} moves ({len(moves)})"
     else:
-        title = f"{name.capitalize()} {dash} learnable moves ({len(moves)})"
+        title = f"{name.capitalize()} {chars.dash} learnable moves ({len(moves)})"
 
     table = Table(
         title=title,
@@ -145,10 +115,9 @@ def render_pokemon_moves(
     table.add_column("Method", width=12)
     table.add_column("Level", justify="right", width=6)
 
-    level_placeholder = "\u2014" if _uses_unicode else "-"
     for m in moves:
         color = METHOD_COLORS.get(m.learn_method, "white")
-        level_str = str(m.level) if m.learn_method == "level-up" else level_placeholder
+        level_str = str(m.level) if m.learn_method == "level-up" else chars.dash
         table.add_row(m.name, f"[{color}]{m.learn_method}[/]", level_str)
 
     console.print(table)
@@ -157,7 +126,7 @@ def render_pokemon_moves(
         from collections import Counter
 
         counts = Counter(m.learn_method for m in moves)
-        separator = "  \u00b7  " if _uses_unicode else "  |  "
+        separator = f"  {chars.bullet}  "
         parts = []
         for method in ("level-up", "machine", "egg", "tutor"):
             if method in counts:

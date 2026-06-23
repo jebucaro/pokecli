@@ -4,7 +4,9 @@ from pathlib import Path
 import typer
 from rich.console import Console
 
-app = typer.Typer(help="Install pokecli integrations.")
+from pokecli.display.common import uses_unicode
+
+app = typer.Typer(help="Install pokecli agent skills.")
 console = Console()
 err_console = Console(stderr=True)
 
@@ -15,15 +17,15 @@ def install(
     skills: bool = typer.Option(
         False,
         "--skills",
-        help="Install Claude Code skills (use --local to target the current directory).",
+        help="Install the packaged pokecli skill files, use --local to target the current directory.",
     ),
     local: bool = typer.Option(
         False,
         "--local",
-        help="Install to .claude/skills/pokecli/ relative to the current directory.",
+        help="Install under .claude/skills/pokecli/ in the current directory.",
     ),
 ) -> None:
-    """Install pokecli integrations."""
+    """Install pokecli agent skills."""
     if not skills:
         console.print(ctx.get_help())
         raise typer.Exit()
@@ -39,11 +41,13 @@ def install(
 
     refs_dir = dest_dir / "references"
     refs_dir.mkdir(exist_ok=True)
-    api_fields = (
-        skill_pkg.joinpath("references")
-        .joinpath("api-fields.md")
-        .read_text(encoding="utf-8")
-    )
-    (refs_dir / "api-fields.md").write_text(api_fields, encoding="utf-8")
+    for ref_name in ("api-fields.md", "workflows.md"):
+        content = (
+            skill_pkg.joinpath("references")
+            .joinpath(ref_name)
+            .read_text(encoding="utf-8")
+        )
+        (refs_dir / ref_name).write_text(content, encoding="utf-8")
 
-    console.print(f"[green]✓ Skills installed to {dest_dir}[/green]")
+    marker = "✓" if uses_unicode(console) else "[OK]"
+    console.print(f"[green]{marker} Skills installed to {dest_dir}[/green]")

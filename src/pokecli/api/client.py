@@ -19,6 +19,19 @@ class PokeAPIClient:
         response.raise_for_status()
         return response.json()
 
+    def get_resource_by_url(self, url: str) -> dict:
+        response = self._client.get(url)
+        response.raise_for_status()
+        return response.json()
+
+    def get_subresource(
+        self, resource: str, identifier: str | int, sub: str
+    ) -> list | dict:
+        """Fetch a nested endpoint like /pokemon/{id}/encounters/."""
+        response = self._client.get(f"/{resource}/{identifier}/{sub}/")
+        response.raise_for_status()
+        return response.json()
+
     def download_bytes(self, url: str) -> bytes:
         response = self._client.get(url, follow_redirects=True, timeout=30.0)
         response.raise_for_status()

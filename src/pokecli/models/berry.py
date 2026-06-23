@@ -1,18 +1,12 @@
-from pydantic import BaseModel, ConfigDict
-
-from pokecli.models.common import NamedResource
+from pokecli.models.common import BasePokeModel, NamedResource
 
 
-class BerryFlavorValue(BaseModel):
-    model_config = ConfigDict(extra="ignore")
-
+class BerryFlavorValue(BasePokeModel):
     potency: int
     flavor: NamedResource
 
 
-class Berry(BaseModel):
-    model_config = ConfigDict(extra="ignore")
-
+class Berry(BasePokeModel):
     id: int
     name: str
     growth_time: int

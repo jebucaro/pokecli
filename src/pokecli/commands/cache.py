@@ -14,7 +14,7 @@ def clear(
     resource: str = typer.Option(
         "all",
         "--resource",
-        help=f"Resource to clear: {', '.join(RESOURCE_TABLES)}, or all",
+        help=f"Which cached resource to clear: {', '.join(RESOURCE_TABLES)}, or all",
     ),
 ) -> None:
     """Clear cached entries."""

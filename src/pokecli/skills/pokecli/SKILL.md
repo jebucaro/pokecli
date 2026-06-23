@@ -1,28 +1,89 @@
 ---
 name: pokecli
-description: Queries Pokémon, Berries, Items, and Moves data via the pokecli CLI. Use when the user needs to look up Pokémon stats, berries, items, or moves, download sprites, or manage the local cache. Also use when the user mentions "pokecli", "pokedex", or "PokeAPI"
+description: Queries Pokemon, moves, items, abilities, types, locations, game data, forms, machines, encounters, evolutions, and other PokeAPI-backed resources via the pokecli CLI. Use when the user needs Pokemon stats, move info, type matchups, catch locations, evolution chains, sprite downloads, regional or generation data, or cache management. Also use when the user mentions pokecli, pokedex, or PokeAPI.
 allowed-tools: Bash(pokecli:*)
+user-invocable: false
 ---
 
-# Pokémon Data Lookup with pokecli
+# Pokemon Data Lookup With pokecli
+
+## Agent rule
+
+Use the canonical command path shown in this skill. Human aliases exist, but agents should prefer explicit commands like `pokemon get`, `move get`, and `game region get`.
+
+If a memorized command fails, check `pokecli --help` or the subgroup help before guessing.
+
+Prefer the default table output. Do not switch to `--format json` unless the next step explicitly includes `jq` or another parser, for example a Python script. Raw JSON is harder for agents to read directly, and it usually adds extra parsing work instead of helping.
 
 ## Quick start
 
 ```bash
 pokecli pokemon get pikachu
-pokecli berry get oran
-pokecli item get master-ball
 pokecli move get thunderbolt
+pokecli ability get intimidate
+pokecli type get fire
+pokecli game region get kanto
+pokecli location get pallet-town
 ```
 
 ## Core workflow
 
-1. Query: Use `pokecli <resource> get <name_or_id>` to fetch details
-2. Browse: Use `pokecli <resource> list` to paginate through all entries
-3. Download: Use `pokecli image download pokemon <name> -o <path>` for sprites
-4. Cache: Use `pokecli cache stats` and `pokecli cache clear` to manage local data
+1. Query: use `pokecli <resource> get <name_or_id>` on the main resources.
+2. Browse: use `pokecli <resource> list` when available.
+3. Pokemon-specific tasks live under `pokemon`, for example `species`, `evolution`, `encounters`, `forms`, and `can-learn`.
+4. Nested reference resources are grouped under `pokemon`, `move`, `location`, and `game`.
+5. Cache is managed with `pokecli cache stats` and `pokecli cache clear`.
 
 Responses are cached locally after the first request. Use `--no-cache` to force a fresh fetch.
+
+## Decision tree
+
+| User intent | Canonical command |
+|-------------|-------------------|
+| Pokemon stats, types, abilities | `pokecli pokemon get <name>` |
+| Moves a Pokemon can learn | `pokecli pokemon moves <name>` |
+| Can this Pokemon learn move X? | `pokecli pokemon can-learn <name> <move>` |
+| Pokedex entry, egg groups, capture rate | `pokecli pokemon species <name>` |
+| Full evolution chain for a Pokemon | `pokecli pokemon evolution <name>` |
+| Where can I catch this Pokemon? | `pokecli pokemon encounters <name>` |
+| All varieties for a species | `pokecli pokemon forms <name>` |
+| Inspect a specific form | `pokecli pokemon form get <form-name>` |
+| Download a sprite | `pokecli pokemon image <name> -o <path>` |
+| What does an ability do? | `pokecli ability get <name>` |
+| What does a move do? | `pokecli move get <name>` |
+| What is this move damage class? | `pokecli move damage-class get <name>` |
+| What is this move learn method? | `pokecli move learn-method get <name>` |
+| Type matchups | `pokecli type get <name>` |
+| Item details | `pokecli item get <name>` |
+| Nature effects | `pokecli nature get <name>` |
+| Berry details | `pokecli berry get <name>` |
+| Egg group meaning | `pokecli pokemon egg-group get <name>` |
+| Growth rate meaning | `pokecli pokemon growth-rate get <name>` |
+| Evolution trigger meaning | `pokecli pokemon evolution-trigger get <name>` |
+| Region details | `pokecli game region get <name>` |
+| Location details | `pokecli location get <name>` |
+| Location encounter area details | `pokecli location area get <name>` |
+| Generation roster | `pokecli game generation get <name>` |
+| Regional pokedex listing | `pokecli game pokedex get <name>` |
+| Game version details | `pokecli game version get <name>` |
+| Version group details | `pokecli game version-group get <name>` |
+| TM or HM lookup | `pokecli game machine get <id>` |
+| Evolution chain by chain ID | `pokecli pokemon evolution-chain get <id>` |
+
+## Human aliases
+
+These are fine for manual use, but agents should not default to them.
+
+```bash
+pokecli pokemon pikachu
+pokecli move thunderbolt
+pokecli item master-ball
+pokecli ability intimidate
+pokecli type fire
+pokecli location pallet-town
+pokecli pokemon where pikachu
+pokecli pokemon evo eevee
+```
 
 ## Commands
 
@@ -30,130 +91,90 @@ Responses are cached locally after the first request. Use `--no-cache` to force 
 
 ```bash
 pokecli pokemon get pikachu
-pokecli pokemon get 25
-pokecli pokemon get charizard --format json
-pokecli pokemon get bulbasaur --no-cache
 pokecli pokemon list
-pokecli pokemon list --limit 50
-pokecli pokemon list --limit 20 --offset 40
-pokecli pokemon moves charmander
-pokecli pokemon moves 4 --format json
-pokecli pokemon moves pikachu --move thunderbolt
-pokecli pokemon moves pikachu --move thunderbolt --format json
-pokecli pokemon moves eevee --method egg
-pokecli pokemon moves charizard --method level-up
-```
-
-### Berry
-
-```bash
-pokecli berry get cheri
-pokecli berry get 1
-pokecli berry get oran --format json
-pokecli berry list
-pokecli berry list --limit 10
-pokecli berry list --limit 10 --offset 20
-```
-
-### Item
-
-```bash
-pokecli item get potion
-pokecli item get 1
-pokecli item get master-ball --format json
-pokecli item list
-pokecli item list --limit 30
-pokecli item list --limit 30 --offset 60
+pokecli pokemon moves pikachu
+pokecli pokemon species pikachu
+pokecli pokemon evolution eevee
+pokecli pokemon encounters pikachu
+pokecli pokemon forms charizard
+pokecli pokemon can-learn pikachu thunderbolt
+pokecli pokemon image pikachu -o pikachu.png
+pokecli pokemon form get charizard-mega-x
+pokecli pokemon egg-group get monster
+pokecli pokemon growth-rate get medium-slow
+pokecli pokemon evolution-trigger get use-item
+pokecli pokemon evolution-chain get 67
 ```
 
 ### Move
 
 ```bash
 pokecli move get thunderbolt
-pokecli move get 24
-pokecli move get surf --format json
-pokecli move get flamethrower --no-cache
 pokecli move list
-pokecli move list --limit 40
-pokecli move list --limit 20 --offset 100
+pokecli move damage-class get special
+pokecli move learn-method get machine
 ```
 
-### Image Download
+### Game
 
 ```bash
-pokecli image download pokemon pikachu -o pikachu.png
-pokecli image download pokemon pikachu -o pikachu_shiny.png --variant front_shiny
-pokecli image download pokemon 6 -o charizard_back.png --variant back_default
-pokecli image download pokemon 133 -o /tmp/eevee.png
+pokecli game region get kanto
+pokecli game generation get generation-i
+pokecli game pokedex get national
+pokecli game version get red
+pokecli game version-group get red-blue
+pokecli game machine get 79
 ```
 
-Sprite variants: `front_default`, `front_shiny`, `back_default`, `back_shiny`, `front_female`, `front_shiny_female`
+### Location
 
-### Cache Management
+```bash
+pokecli location get kanto-route-1
+pokecli location area get kanto-route-1-area
+```
+
+### Other main resources
+
+```bash
+pokecli ability get intimidate
+pokecli item get master-ball
+pokecli type get fire
+pokecli nature get modest
+pokecli berry get oran
+```
+
+### Cache
 
 ```bash
 pokecli cache stats
 pokecli cache clear
 pokecli cache clear --resource pokemon
-pokecli cache clear --resource item
 ```
 
-## Global options
+## Output format guidance
 
-| Option | Description |
-|--------|-------------|
-| `--no-cache` | Bypass local cache, fetch fresh from PokeAPI |
-| `--format table` | Rich formatted table output (default) |
-| `--format json` | Raw JSON with syntax highlighting |
+Prefer the default table output.
 
-## `pokemon moves` options
+Use `--format json` only when the next shell step actually needs JSON, and only when you also have a parser step planned, for example `jq` or a Python script.
 
-| Option | Description |
-|--------|-------------|
-| `--move <name>` | Filter to a specific move; exits 1 if the Pokémon cannot learn it |
-| `--method <method>` | Filter by learn method: `level-up`, `machine`, `tutor`, `egg` |
-
-## Example: Compare two Pokémon
+Good:
 
 ```bash
-pokecli pokemon get charizard
-pokecli pokemon get blastoise
+pokecli game pokedex get kanto --format json | jq -r '.pokemon_entries[].pokemon_species.name'
 ```
 
-## Example: Browse and then inspect
+Avoid:
 
 ```bash
-pokecli move list --limit 10
-pokecli move get pound
+pokecli pokemon get pikachu --format json
 ```
 
-## Example: Download all starters
+Use the table output instead when you are just reading the result in the terminal.
 
-```bash
-pokecli image download pokemon bulbasaur -o bulbasaur.png
-pokecli image download pokemon charmander -o charmander.png
-pokecli image download pokemon squirtle -o squirtle.png
-```
+## Multi-step workflows
 
-## Example: Look up moves a Pokémon can learn
+For recipes that jump across commands, read `references/workflows.md`.
 
-```bash
-# All moves with summary footer
-pokecli pokemon moves pikachu
+## Field details
 
-# Check if a Pokémon can learn a specific move (table)
-pokecli pokemon moves pikachu --move thunderbolt
-
-# Agent-friendly: returns {"can_learn": true/false, "method": "...", "level": N}
-pokecli pokemon moves pikachu --move thunderbolt --format json
-
-# Filter by learn method: level-up, machine, tutor, egg
-pokecli pokemon moves eevee --method egg
-pokecli pokemon moves charizard --method level-up --format json
-```
-
-**`--move` exit codes:** `0` if the Pokémon can learn the move, `1` if it cannot.
-
-## Troubleshooting
-
-For detailed command reference and data field descriptions, consult `references/api-fields.md`.
+For response field explanations, read `references/api-fields.md`.

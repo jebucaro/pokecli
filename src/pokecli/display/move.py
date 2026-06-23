@@ -1,28 +1,28 @@
 from rich.console import Console
 from rich.panel import Panel
-from rich.table import Table
 
-from pokecli.display.common import uses_unicode
+from pokecli.display.common import (
+    create_key_value_table,
+    format_name,
+    get_chars,
+    panel_title,
+)
 from pokecli.models.move import Move
 
 
 def render_move(move: Move, console: Console) -> None:
-    _uses_unicode = uses_unicode(console)
-    dash = "\u2014" if _uses_unicode else "-"
+    chars = get_chars(console)
 
-    header = f"[bold]#{move.id}  {move.name.replace('-', ' ').title()}[/bold]"
-    console.print(Panel(header, expand=False))
+    console.print(Panel(panel_title(move.id, format_name(move.name)), expand=False))
 
-    table = Table(show_header=False, box=None, padding=(0, 2))
-    table.add_column("Key", style="bold dim")
-    table.add_column("Value", style="white")
+    table = create_key_value_table()
     table.add_row("Type", move.type.name.capitalize())
     table.add_row("Category", move.damage_class.name.capitalize())
-    table.add_row("Power", str(move.power) if move.power is not None else dash)
+    table.add_row("Power", str(move.power) if move.power is not None else chars.dash)
     table.add_row(
-        "Accuracy", f"{move.accuracy}%" if move.accuracy is not None else dash
+        "Accuracy", f"{move.accuracy}%" if move.accuracy is not None else chars.dash
     )
-    table.add_row("PP", str(move.pp) if move.pp is not None else dash)
+    table.add_row("PP", str(move.pp) if move.pp is not None else chars.dash)
     if move.effect_chance is not None:
         table.add_row("Effect Chance", f"{move.effect_chance}%")
     console.print(table)

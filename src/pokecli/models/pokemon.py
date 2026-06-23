@@ -1,34 +1,24 @@
-from pydantic import BaseModel, ConfigDict
-
-from pokecli.models.common import NamedResource
+from pokecli.models.common import BasePokeModel, NamedResource
 
 
-class PokemonType(BaseModel):
-    model_config = ConfigDict(extra="ignore")
-
+class PokemonType(BasePokeModel):
     slot: int
     type: NamedResource
 
 
-class PokemonAbility(BaseModel):
-    model_config = ConfigDict(extra="ignore")
-
+class PokemonAbility(BasePokeModel):
     slot: int
     is_hidden: bool
     ability: NamedResource
 
 
-class PokemonStat(BaseModel):
-    model_config = ConfigDict(extra="ignore")
-
+class PokemonStat(BasePokeModel):
     base_stat: int
     effort: int
     stat: NamedResource
 
 
-class PokemonSprites(BaseModel):
-    model_config = ConfigDict(extra="ignore")
-
+class PokemonSprites(BasePokeModel):
     front_default: str | None = None
     front_shiny: str | None = None
     back_default: str | None = None
@@ -37,15 +27,13 @@ class PokemonSprites(BaseModel):
     front_shiny_female: str | None = None
 
 
-class PokemonMoveEntry(BaseModel):
+class PokemonMoveEntry(BasePokeModel):
     name: str
     learn_method: str
     level: int
 
 
-class Pokemon(BaseModel):
-    model_config = ConfigDict(extra="ignore")
-
+class Pokemon(BasePokeModel):
     id: int
     name: str
     height: int

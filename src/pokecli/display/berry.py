@@ -2,11 +2,12 @@ from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
 
+from pokecli.display.common import panel_title
 from pokecli.models.berry import Berry
 
 
 def render_berry(berry: Berry, console: Console) -> None:
-    header = f"[bold]#{berry.id}  {berry.name.capitalize()} Berry[/bold]"
+    header = panel_title(berry.id, f"{berry.name.capitalize()} Berry")
     info = (
         f"[bold]Growth Time:[/bold] {berry.growth_time}h   "
         f"[bold]Max Harvest:[/bold] {berry.max_harvest}   "
