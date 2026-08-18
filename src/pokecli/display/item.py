@@ -30,3 +30,6 @@ def render_item(item: Item, console: Console) -> None:
             f'[dim italic]"{english_flavor[0].text}"[/dim italic]\n'
             f"[dim]{chars.dash} {english_flavor[0].version_group.name}[/dim]"
         )
+
+    if not english_effects and not english_flavor:
+        console.print("[dim]No English effect or flavor text available.[/dim]")

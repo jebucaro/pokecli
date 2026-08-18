@@ -33,3 +33,5 @@ def render_move(move: Move, console: Console) -> None:
         if move.effect_chance is not None:
             effect_text = effect_text.replace("$effect_chance", str(move.effect_chance))
         console.print(f"\n[bold]Effect:[/bold] {effect_text}")
+    else:
+        console.print("\n[dim]No English effect text available.[/dim]")

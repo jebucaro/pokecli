@@ -1,10 +1,17 @@
 """Smoke tests for pokemon encounters/forms sub-commands wiring."""
 
+import re
+
 from typer.testing import CliRunner
 
 from pokecli.main import app
 
 runner = CliRunner()
+
+
+def _strip_ansi(text: str) -> str:
+    """Remove ANSI escape sequences for assertion matching."""
+    return re.sub(r"\x1b\[[0-9;]*m", "", text)
 
 
 def test_pokemon_help_lists_navigation_subcommands():
@@ -28,24 +35,28 @@ def test_pokemon_help_lists_navigation_subcommands():
 def test_pokemon_encounters_help():
     result = runner.invoke(app, ["pokemon", "encounters", "--help"])
     assert result.exit_code == 0
-    assert "name_or_id" in result.stdout.lower() or "NAME_OR_ID" in result.stdout
-    assert "--no-cache" in result.stdout
+    output = _strip_ansi(result.stdout)
+    assert "name_or_id" in output.lower() or "NAME_OR_ID" in output
+    assert "--no-cache" in output
 
 
 def test_pokemon_forms_help():
     result = runner.invoke(app, ["pokemon", "forms", "--help"])
     assert result.exit_code == 0
-    assert "--no-cache" in result.stdout
-    assert "--format" in result.stdout
+    output = _strip_ansi(result.stdout)
+    assert "--no-cache" in output
+    assert "--format" in output
 
 
 def test_pokemon_bare_lookup_alias_resolves_to_get():
     result = runner.invoke(app, ["pokemon", "pikachu", "--help"])
     assert result.exit_code == 0
-    assert "Usage: pokecli pokemon get" in result.stdout or "Usage: root pokemon get" in result.stdout
+    output = _strip_ansi(result.stdout)
+    assert "Usage: pokecli pokemon get" in output or "Usage: root pokemon get" in output
 
 
 def test_move_bare_lookup_alias_resolves_to_get():
     result = runner.invoke(app, ["move", "thunderbolt", "--help"])
     assert result.exit_code == 0
-    assert "Usage: pokecli move get" in result.stdout or "Usage: root move get" in result.stdout
+    output = _strip_ansi(result.stdout)
+    assert "Usage: pokecli move get" in output or "Usage: root move get" in output

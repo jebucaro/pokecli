@@ -1,14 +1,17 @@
 # pokecli
 
-`pokecli` is a command line interface for looking up Pokemon data from [PokeAPI](https://pokeapi.co/api/v2). It covers Pokemon, moves, items, abilities, locations, game data, forms, machines, and a few lower-level reference resources. Results are shown as rich terminal tables by default, raw JSON is available when you need it, and responses are cached locally.
+`pokecli` is a command line interface for looking up Pokemon data from [PokeAPI](https://pokeapi.co/api/v2). It covers Pokemon, moves, items, abilities, locations, game data, forms, machines, and a few lower-level reference resources. Results are shown as rich terminal tables by default, a token-optimized format is available for agents, raw JSON is available when you need it, and responses are cached locally.
+
+Running `pokecli` with no arguments shows a live dashboard with cache status and quick-start examples.
 
 ## Features
 
 - Canonical `get` and `list` commands for agents and scripts
 - Human-friendly shortcuts like `pokecli pokemon pikachu`
 - Pokemon task commands for moves, evolutions, encounters, forms, and sprites
-- Grouped reference commands under `pokemon`, `move`, `location`, and `game`
+- Grouped reference commands under `pokemon`, `location`, and `game`
 - Rich output with tables, panels, and syntax-highlighted JSON
+- Token-optimized `--format toon` output for LLM agents
 - Local TinyDB cache to cut down on repeated API calls
 
 ## Requirements
@@ -141,8 +144,8 @@ pokecli location area get kanto-route-1-area
 
 | Command | Purpose |
 |--------|---------|
-| `pokemon` | Pokemon lookup, species, moves, evolutions, forms, encounters, and Pokemon-adjacent reference data |
-| `move` | Move lookup, damage classes, and learn methods |
+| `pokemon` | Pokemon lookup, species, moves, evolutions, forms, and encounters |
+| `move` | Move lookup |
 | `item` | Item lookup |
 | `ability` | Ability lookup |
 | `type` | Type matchup lookup |
@@ -183,10 +186,9 @@ Nested reference groups:
 
 ```bash
 pokecli pokemon form get <form_name>
-pokecli pokemon egg-group get <name>
-pokecli pokemon growth-rate get <name>
-pokecli pokemon evolution-trigger get <name>
+pokecli pokemon form list [--limit --offset]
 pokecli pokemon evolution-chain get <id>
+pokecli pokemon evolution-chain list [--limit --offset]
 ```
 
 ### `move`
@@ -194,8 +196,6 @@ pokecli pokemon evolution-chain get <id>
 ```bash
 pokecli move get <name_or_id>
 pokecli move list [--limit --offset]
-pokecli move damage-class get <name_or_id>
-pokecli move learn-method get <name_or_id>
 ```
 
 Human alias:
@@ -249,6 +249,7 @@ pokecli type <name_or_id>
 pokecli location get <name_or_id>
 pokecli location list [--limit --offset]
 pokecli location area get <name_or_id>
+pokecli location area list [--limit --offset]
 ```
 
 Human alias:
@@ -261,11 +262,17 @@ pokecli location <name_or_id>
 
 ```bash
 pokecli game region get <name_or_id>
+pokecli game region list [--limit --offset]
 pokecli game generation get <name_or_id>
+pokecli game generation list [--limit --offset]
 pokecli game version get <name_or_id>
+pokecli game version list [--limit --offset]
 pokecli game version-group get <name_or_id>
+pokecli game version-group list [--limit --offset]
 pokecli game pokedex get <name_or_id>
+pokecli game pokedex list [--limit --offset]
 pokecli game machine get <id>
+pokecli game machine list [--limit --offset]
 ```
 
 ### `image`
@@ -284,6 +291,32 @@ pokecli cache clear
 pokecli cache clear --resource pokemon
 ```
 
+### `nature`
+
+```bash
+pokecli nature get <name_or_id>
+pokecli nature list [--limit --offset]
+```
+
+Human alias:
+
+```bash
+pokecli nature <name_or_id>
+```
+
+### `berry`
+
+```bash
+pokecli berry get <name_or_id>
+pokecli berry list [--limit --offset]
+```
+
+Human alias:
+
+```bash
+pokecli berry <name_or_id>
+```
+
 ## Output Formats
 
 All `get` commands, plus the richer Pokemon task commands, support `--format`.
@@ -291,9 +324,12 @@ All `get` commands, plus the richer Pokemon task commands, support `--format`.
 | Format | Description |
 |--------|-------------|
 | `table` | Rich formatted output, default |
+| `toon` | Token-optimized compact output for agents |
 | `json` | Raw JSON with syntax highlighting |
 
 Use `table` by default when you are reading the result in the terminal.
+
+Use `toon` for agent and LLM workflows — it produces ~40% smaller output than JSON.
 
 Use `json` only when the next step includes a parser, for example `jq` or a Python script.
 
@@ -303,6 +339,40 @@ Examples:
 pokecli game pokedex get kanto --format json | jq -r '.pokemon_entries[].pokemon_species.name'
 pokecli pokemon encounters pikachu --format json | jq '.[].location_area.name'
 ```
+
+## TOON Format (Agent Output)
+
+The `--format toon` flag produces Token-Optimized Object Notation, a compact key:value format designed for LLM context windows:
+
+```bash
+$ pokecli pokemon get pikachu --format toon
+pokemon:
+  id: 25
+  name: pikachu
+  types: electric
+  abilities: static/lightning-rod
+  stats: 35/55/40/50/50/90
+  total_moves: 109
+help[3]:
+  Run `pokecli pokemon moves pikachu`
+  Run `pokecli pokemon evolution pikachu`
+  Run `pokecli pokemon encounters pikachu`
+```
+
+For list commands:
+
+```bash
+$ pokecli pokemon list --format toon
+count: 20 of 1302 total
+pokemon[20]{name}:
+  bulbasaur
+  ivysaur
+  ...
+help[1]:
+  Run `pokecli pokemon get bulbasaur`
+```
+
+Every response includes contextual `help[]` hints suggesting logical next steps.
 
 ## Caching
 
@@ -328,10 +398,11 @@ pokecli cache clear --resource pokemon-species
 ## Notes For Agents
 
 - Prefer canonical commands like `pokemon get`, `move get`, `game region get`
+- Use `--format toon` for token-efficient output optimized for LLM context windows
+- Output includes contextual `help[]` hints suggesting next steps
 - Use bare aliases like `pokemon pikachu` only when you want the shorter human path
-- Prefer table output for direct reading in the terminal
 - Only use `--format json` when the next step explicitly includes a parser like `jq` or a Python script
-- Avoid switching to JSON if you are just going to read the output yourself, table output is usually easier
+- Do not use `--format table` — it contains Rich markup that wastes tokens
 
 ## Data Source
 

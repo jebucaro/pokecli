@@ -126,10 +126,16 @@ def render_pokemon_moves(
         from collections import Counter
 
         counts = Counter(m.learn_method for m in moves)
+        total = sum(counts.values())
         separator = f"  {chars.bullet}  "
         parts = []
         for method in ("level-up", "machine", "egg", "tutor"):
             if method in counts:
                 color = METHOD_COLORS.get(method, "white")
                 parts.append(f"[{color}]{counts[method]} {method}[/]")
-        console.print("  " + separator.join(parts), highlight=False)
+        console.print()
+        console.print(
+            f"  [bold]{total} moves[/bold]  {chars.dash}  "
+            + separator.join(parts),
+            highlight=False,
+        )

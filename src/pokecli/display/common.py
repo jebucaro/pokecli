@@ -78,6 +78,10 @@ def panel_title(id: int, label: str) -> str:
 def render_list(result: ListResult, console: Console) -> None:
     chars = get_chars(console)
 
+    if not result.results:
+        console.print(f"[dim]0 results at this offset. ({result.count} total exist)[/dim]")
+        return
+
     table = Table(title=f"Results ({result.count} total)", show_lines=False)
     table.add_column("Name", style="bold cyan")
     table.add_column("URL", style="dim")

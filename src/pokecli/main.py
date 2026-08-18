@@ -1,16 +1,19 @@
+import shutil
+import sys
+from pathlib import Path
+
 import typer
+from rich.console import Console
 
 from pokecli.api.client import PokeAPIClient
+from pokecli.cache.store import CacheStore
 from pokecli.commands import (
     ability,
     berry,
     cache,
-    egg_group,
     evolution_chain,
-    evolution_trigger,
     game,
     generation,
-    growth_rate,
     image,
     install,
     item,
@@ -18,8 +21,6 @@ from pokecli.commands import (
     location_area,
     machine,
     move,
-    move_damage_class,
-    move_learn_method,
     nature,
     pokedex,
     pokemon,
@@ -33,7 +34,7 @@ from pokecli.commands import (
 app = typer.Typer(
     name="pokecli",
     help="Look up Pokemon data, moves, locations, and game info from the terminal.",
-    no_args_is_help=True,
+    invoke_without_command=True,
     epilog=(
         "Examples:\n"
         "  pokecli pokemon pikachu\n"
@@ -45,10 +46,61 @@ app = typer.Typer(
 )
 
 
-@app.callback()
+@app.callback(invoke_without_command=True)
 def root(ctx: typer.Context) -> None:
     ctx.ensure_object(dict)
     ctx.obj["client"] = ctx.with_resource(PokeAPIClient())
+
+    if ctx.invoked_subcommand is None:
+        _show_home_view()
+
+
+def _show_home_view() -> None:
+    console = Console()
+
+    # Binary path
+    bin_path = shutil.which("pokecli") or sys.argv[0]
+    home = str(Path.home())
+    if bin_path.startswith(home):
+        bin_path = "~" + bin_path[len(home):]
+
+    console.print("[bold]pokecli[/bold]")
+    console.print(f"[dim]bin: {bin_path}[/dim]")
+    console.print(
+        "Look up Pokemon data, moves, locations, and game info from the terminal.\n"
+    )
+
+    # Cache summary
+    try:
+        with CacheStore() as cache:
+            counts = cache.stats()
+        total = sum(counts.values())
+        non_empty = {k: v for k, v in counts.items() if v > 0}
+
+        if total > 0:
+            console.print(f"[bold]Cache:[/bold] {total} entries")
+            parts = [
+                f"{k}: {v}"
+                for k, v in sorted(non_empty.items(), key=lambda x: -x[1])[:5]
+            ]
+            console.print(f"  [dim]{', '.join(parts)}[/dim]")
+        else:
+            console.print(
+                "[bold]Cache:[/bold] empty (data will be fetched from PokeAPI on first use)"
+            )
+        console.print()
+    except Exception:
+        pass
+
+    # Quick start
+    console.print("[bold]Quick start:[/bold]")
+    console.print("  pokecli pokemon pikachu")
+    console.print("  pokecli move thunderbolt")
+    console.print("  pokecli type fire")
+    console.print("  pokecli pokemon can-learn charizard fly")
+    console.print("  pokecli game region get kanto")
+    console.print()
+    console.print("[dim]Run pokecli --help for full command reference.[/dim]")
 
 
 app.add_typer(install.app, name="install")
@@ -71,9 +123,4 @@ app.add_typer(version.app, name="version", hidden=True)
 app.add_typer(version_group.app, name="version-group", hidden=True)
 app.add_typer(machine.app, name="machine", hidden=True)
 app.add_typer(pokemon_form.app, name="pokemon-form", hidden=True)
-app.add_typer(egg_group.app, name="egg-group", hidden=True)
-app.add_typer(growth_rate.app, name="growth-rate", hidden=True)
-app.add_typer(evolution_trigger.app, name="evolution-trigger", hidden=True)
-app.add_typer(move_damage_class.app, name="move-damage-class", hidden=True)
-app.add_typer(move_learn_method.app, name="move-learn-method", hidden=True)
 app.add_typer(evolution_chain.app, name="evolution-chain", hidden=True)

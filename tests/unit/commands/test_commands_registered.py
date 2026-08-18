@@ -32,7 +32,7 @@ def test_root_help_lists_primary_commands():
 @pytest.mark.parametrize(
     ("cmd", "expected"),
     [
-        ("move", ["get", "list", "damage-class", "learn-method"]),
+        ("move", ["get", "list"]),
         (
             "pokemon",
             ["get", "moves", "species", "evolution", "encounters", "form"],
@@ -63,7 +63,6 @@ def test_grouped_commands_expose_expected_subcommands(cmd, expected):
     [
         ["region", "--help"],
         ["pokemon-form", "--help"],
-        ["move-damage-class", "--help"],
     ],
 )
 def test_hidden_legacy_commands_still_work(cmd):

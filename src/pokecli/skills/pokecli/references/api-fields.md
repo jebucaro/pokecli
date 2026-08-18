@@ -1,5 +1,7 @@
 # pokecli API Field Reference
 
+> When using pokecli as an agent, always pass `--format toon` for compact output.
+
 Detailed data fields returned by each resource type. Consult this when you need
 to interpret or explain specific fields from `pokecli` output.
 
@@ -23,12 +25,15 @@ Returned by `pokecli pokemon moves <name_or_id>`.
 | Field | Description |
 |-------|-------------|
 | `name` | Move name (hyphen-separated, e.g. `flamethrower`) |
-| `learn_method` | How the move is learned: `level-up`, `machine`, `tutor`, or `egg` |
+| `learn_method` | How the move is learned: `level-up`, `machine`, `tutor`, `egg`, or occasionally another upstream PokeAPI value such as `train` (a training-menu method used by newer games) |
 | `level` | Level at which the move is learned (level-up only; `0` for all others) |
 
 Results are deduplicated across all game versions. Each move appears once,
 with the learn method taken from the most recent game version that includes it.
 Sorted: level-up moves first (by level), then machine/tutor/egg alphabetically.
+An unfamiliar method value is not a bug — PokeAPI adds new methods over time and pokecli
+passes them through unmodified. None of them, including `machine`, carry a TM/machine ID;
+see `workflows.md` for why that lookup needs a different starting point.
 
 ## Ability Fields
 
@@ -158,62 +163,6 @@ Additional modifiers appended when present: `(day)`, `(night)`, `(rain)`, `(upsi
 | `front_female` | Female variant, front-facing (if exists) |
 | `front_shiny_female` | Shiny female variant, front-facing (if exists) |
 
-## Egg Group Fields
-
-Returned by `pokecli pokemon egg-group get <name_or_id>`.
-
-| Field | Description |
-|-------|-------------|
-| Name | Egg group name (e.g. `monster`, `human-like`, `mineral`) |
-| ID | Egg group identifier |
-| English | Localized English label |
-
-Egg groups determine breeding compatibility. Two Pokémon can breed if they share at least one egg group (with the usual gender restrictions). There are 15 groups; `no-eggs` means the species cannot breed.
-
-## Growth Rate Fields
-
-Returned by `pokecli pokemon growth-rate get <name_or_id>`.
-
-| Field | Description |
-|-------|-------------|
-| Name | Growth rate name (e.g. `slow`, `medium-slow`, `fast`, `erratic`, `fluctuating`) |
-| ID | Growth rate identifier |
-
-Determines the experience curve used to reach each level. There are 6 standard rates.
-
-## Evolution Trigger Fields
-
-Returned by `pokecli pokemon evolution-trigger get <name_or_id>`.
-
-| Field | Description |
-|-------|-------------|
-| Name | Trigger name (`level-up`, `trade`, `use-item`, `shed`, `spin`, `tower-of-darkness`, `tower-of-waters`, `three-critical-hits`, `take-damage`, `other`, `agile-style-move`, `strong-style-move`, `recoil-damage`) |
-| ID | Trigger identifier |
-
-Used in evolution chain definitions to describe how the evolution occurs.
-
-## Move Damage Class Fields
-
-Returned by `pokecli move damage-class get <name_or_id>`.
-
-| Field | Description |
-|-------|-------------|
-| Name | `physical`, `special`, or `status` |
-| ID | Damage class identifier |
-
-`physical` uses the user's Attack vs. defender's Defense. `special` uses Sp. Atk vs. Sp. Def. `status` deals no direct damage.
-
-## Move Learn Method Fields
-
-Returned by `pokecli move learn-method get <name_or_id>`.
-
-| Field | Description |
-|-------|-------------|
-| Name | `level-up`, `machine`, `tutor`, `egg`, `light-ball-egg`, `stadium-surfing-pikachu`, `form-change`, `zygarde-cube` (and others) |
-| ID | Learn method identifier |
-
-Cross-referenced from `pokecli pokemon moves --method <name>`.
-
 ## Version Fields
 
 Returned by `pokecli game version get <name_or_id>`.
@@ -233,7 +182,7 @@ Returned by `pokecli game version-group get <name_or_id>`.
 | Name | Group slug (e.g. `red-blue`, `gold-silver`, `sword-shield`) |
 | ID | Version group identifier |
 | Order | Chronological order across all groups |
-| Generation | Generation that introduced the group |
+| Generation | Generation introduced alongside this region |
 | Versions | Individual game versions in the group |
 | Regions | In-game regions accessible in the group |
 
@@ -374,7 +323,7 @@ chain ID was extracted from another response (e.g. `pokemon species` returns
 All cached responses are stored at `~/.pokecli/cache.json` using TinyDB.
 Each entry is keyed by resource type and name/ID.
 
-Tracked resource tables: `pokemon`, `berry`, `item`, `move`, `ability`, `nature`, `type`, `pokemon-species`, `evolution-chain`, `location`, `location-area`, `region`, `generation`, `version`, `version-group`, `pokedex`, `machine`, `pokemon-form`, `egg-group`, `growth-rate`, `evolution-trigger`, `move-damage-class`, `move-learn-method`.
+Tracked resource tables: `pokemon`, `berry`, `item`, `move`, `ability`, `nature`, `type`, `pokemon-species`, `evolution-chain`, `location`, `location-area`, `region`, `generation`, `version`, `version-group`, `pokedex`, `machine`, `pokemon-form`.
 
 All tables are visible in `pokecli cache stats` and can be cleared individually with `pokecli cache clear --resource <table>`.
 
@@ -385,4 +334,4 @@ No authentication required. Free and open.
 
 ## Related References
 
-- `workflows.md` — multi-step recipes for traversing related resources (regional encounter lookup, TM tracing, full Pokemon profile, decoding cross-reference fields).
+- `workflows.md` — multi-step recipes for traversing related resources (regional encounter lookup, TM tracing, full Pokemon profile).

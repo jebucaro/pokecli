@@ -37,8 +37,22 @@ def get(
         raise typer.Exit(2)
     if format == "json":
         render_json(area.model_dump(), console)
+    elif format == "toon":
+        from pokecli.display.toon import toon_single, print_toon
+        from pokecli.display.toon_schemas import location_area_toon
+        from pokecli.display.hints import get_hints, format_hints_toon
+        hints = get_hints("location_area.get", {"name": area.name, "location": area.location.name})
+        fields = location_area_toon(area)
+        print_toon(toon_single("location_area", fields))
+        hint_text = format_hints_toon(hints)
+        if hint_text:
+            print_toon("\n" + hint_text)
     else:
+        from pokecli.display.hints import get_hints, format_hints_table
+        hints = get_hints("location_area.get", {"name": area.name, "location": area.location.name})
         render_location_area(area, console)
+        if hints:
+            console.print(format_hints_table(hints))
 
 
 @app.command(name="list")
@@ -46,9 +60,23 @@ def list_location_areas(
     ctx: typer.Context,
     limit: int = typer.Option(DEFAULT_LIMIT, "--limit", help=LIMIT),
     offset: int = typer.Option(DEFAULT_OFFSET, "--offset", help=OFFSET),
+    format: str = typer.Option("table", "--format", help=FORMAT),
 ) -> None:
     """Browse encounter areas with pagination."""
     client = ctx.obj["client"]
-    render_list(
-        fetch_list(client, "location-area", limit, offset, err_console), console
-    )
+    result = fetch_list(client, "location-area", limit, offset, err_console)
+    from pokecli.display.hints import get_hints, format_hints_toon, format_hints_table
+    first_name = result.results[0].name if result.results else None
+    hints = get_hints("location_area.list", {"resource": "location area", "first_name": first_name})
+    if format == "toon":
+        from pokecli.display.toon import toon_list, print_toon
+        from pokecli.display.toon_schemas import resource_list_toon
+        schema_fields, rows = resource_list_toon(result)
+        print_toon(toon_list("location_areas", schema_fields, rows, total=result.count))
+        hint_text = format_hints_toon(hints)
+        if hint_text:
+            print_toon("\n" + hint_text)
+    else:
+        render_list(result, console)
+        if hints:
+            console.print(format_hints_table(hints))

@@ -32,8 +32,24 @@ def get(
         raise typer.Exit(2)
     if format == "json":
         render_json(region.model_dump(), console)
+    elif format == "toon":
+        from pokecli.display.toon import toon_single, print_toon
+        from pokecli.display.toon_schemas import region_toon
+        from pokecli.display.hints import get_hints, format_hints_toon
+        first_location = region.locations[0].name if region.locations else None
+        hints = get_hints("region.get", {"name": region.name, "first_location": first_location})
+        fields = region_toon(region)
+        print_toon(toon_single("region", fields))
+        hint_text = format_hints_toon(hints)
+        if hint_text:
+            print_toon("\n" + hint_text)
     else:
+        from pokecli.display.hints import get_hints, format_hints_table
+        first_location = region.locations[0].name if region.locations else None
+        hints = get_hints("region.get", {"name": region.name, "first_location": first_location})
         render_region(region, console)
+        if hints:
+            console.print(format_hints_table(hints))
 
 
 @app.command(name="list")
@@ -41,7 +57,23 @@ def list_regions(
     ctx: typer.Context,
     limit: int = typer.Option(DEFAULT_LIMIT, "--limit", help=LIMIT),
     offset: int = typer.Option(DEFAULT_OFFSET, "--offset", help=OFFSET),
+    format: str = typer.Option("table", "--format", help=FORMAT),
 ) -> None:
     """Browse regions with pagination."""
     client = ctx.obj["client"]
-    render_list(fetch_list(client, "region", limit, offset, err_console), console)
+    result = fetch_list(client, "region", limit, offset, err_console)
+    from pokecli.display.hints import get_hints, format_hints_toon, format_hints_table
+    first_name = result.results[0].name if result.results else None
+    hints = get_hints("region.list", {"resource": "game region", "first_name": first_name})
+    if format == "toon":
+        from pokecli.display.toon import toon_list, print_toon
+        from pokecli.display.toon_schemas import resource_list_toon
+        schema_fields, rows = resource_list_toon(result)
+        print_toon(toon_list("regions", schema_fields, rows, total=result.count))
+        hint_text = format_hints_toon(hints)
+        if hint_text:
+            print_toon("\n" + hint_text)
+    else:
+        render_list(result, console)
+        if hints:
+            console.print(format_hints_table(hints))

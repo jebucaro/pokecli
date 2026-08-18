@@ -23,7 +23,7 @@ MACHINE_ID = "Machine ID"
 EVOLUTION_CHAIN_ID = "Evolution chain ID"
 
 NO_CACHE = "Fetch fresh data instead of using the local cache"
-FORMAT = "Choose table output or JSON output"
+FORMAT = "Output format: table, toon, or json"
 LIMIT = "Number of results to show"
 OFFSET = "Number of results to skip"
 MOVE_FILTER = "Only show or check this move"

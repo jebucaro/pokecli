@@ -13,25 +13,33 @@ Use the canonical command path shown in this skill. Human aliases exist, but age
 
 If a memorized command fails, check `pokecli --help` or the subgroup help before guessing.
 
-Prefer the default table output. Do not switch to `--format json` unless the next step explicitly includes `jq` or another parser, for example a Python script. Raw JSON is harder for agents to read directly, and it usually adds extra parsing work instead of helping.
+Always use `--format toon` for token-efficient output. This produces compact key:value output optimized for LLM context windows (~40% smaller than JSON). Only use `--format json` when the next step explicitly includes `jq` or another parser. Do not use `--format table` — it contains Rich markup that wastes tokens.
 
 ## Quick start
 
 ```bash
-pokecli pokemon get pikachu
-pokecli move get thunderbolt
-pokecli ability get intimidate
-pokecli type get fire
-pokecli game region get kanto
-pokecli location get pallet-town
+pokecli pokemon get pikachu --format toon
+pokecli move get thunderbolt --format toon
+pokecli ability get intimidate --format toon
+pokecli type get fire --format toon
+pokecli game region get kanto --format toon
+pokecli location get pallet-town --format toon
 ```
+
+## TOON output format
+
+The `--format toon` output uses Token-Optimized Object Notation:
+- Single resources show as `label:` followed by indented `key: value` pairs
+- Lists show as `label[count]{fields}:` followed by indented comma-separated rows
+- Every response ends with `help[]` hints for next steps
+- Aggregates like `count`, `total_moves`, `methods` appear as top-level keys
 
 ## Core workflow
 
 1. Query: use `pokecli <resource> get <name_or_id>` on the main resources.
 2. Browse: use `pokecli <resource> list` when available.
 3. Pokemon-specific tasks live under `pokemon`, for example `species`, `evolution`, `encounters`, `forms`, and `can-learn`.
-4. Nested reference resources are grouped under `pokemon`, `move`, `location`, and `game`.
+4. Nested reference resources are grouped under `pokemon`, `location`, and `game`.
 5. Cache is managed with `pokecli cache stats` and `pokecli cache clear`.
 
 Responses are cached locally after the first request. Use `--no-cache` to force a fresh fetch.
@@ -51,15 +59,10 @@ Responses are cached locally after the first request. Use `--no-cache` to force 
 | Download a sprite | `pokecli pokemon image <name> -o <path>` |
 | What does an ability do? | `pokecli ability get <name>` |
 | What does a move do? | `pokecli move get <name>` |
-| What is this move damage class? | `pokecli move damage-class get <name>` |
-| What is this move learn method? | `pokecli move learn-method get <name>` |
 | Type matchups | `pokecli type get <name>` |
 | Item details | `pokecli item get <name>` |
 | Nature effects | `pokecli nature get <name>` |
 | Berry details | `pokecli berry get <name>` |
-| Egg group meaning | `pokecli pokemon egg-group get <name>` |
-| Growth rate meaning | `pokecli pokemon growth-rate get <name>` |
-| Evolution trigger meaning | `pokecli pokemon evolution-trigger get <name>` |
 | Region details | `pokecli game region get <name>` |
 | Location details | `pokecli location get <name>` |
 | Location encounter area details | `pokecli location area get <name>` |
@@ -69,6 +72,7 @@ Responses are cached locally after the first request. Use `--no-cache` to force 
 | Version group details | `pokecli game version-group get <name>` |
 | TM or HM lookup | `pokecli game machine get <id>` |
 | Evolution chain by chain ID | `pokecli pokemon evolution-chain get <id>` |
+| Browse available resources | `pokecli <resource> list` |
 
 ## Human aliases
 
@@ -100,10 +104,9 @@ pokecli pokemon forms charizard
 pokecli pokemon can-learn pikachu thunderbolt
 pokecli pokemon image pikachu -o pikachu.png
 pokecli pokemon form get charizard-mega-x
-pokecli pokemon egg-group get monster
-pokecli pokemon growth-rate get medium-slow
-pokecli pokemon evolution-trigger get use-item
+pokecli pokemon form list
 pokecli pokemon evolution-chain get 67
+pokecli pokemon evolution-chain list
 ```
 
 ### Move
@@ -111,36 +114,47 @@ pokecli pokemon evolution-chain get 67
 ```bash
 pokecli move get thunderbolt
 pokecli move list
-pokecli move damage-class get special
-pokecli move learn-method get machine
 ```
 
 ### Game
 
 ```bash
 pokecli game region get kanto
+pokecli game region list
 pokecli game generation get generation-i
+pokecli game generation list
 pokecli game pokedex get national
+pokecli game pokedex list
 pokecli game version get red
+pokecli game version list
 pokecli game version-group get red-blue
+pokecli game version-group list
 pokecli game machine get 79
+pokecli game machine list
 ```
 
 ### Location
 
 ```bash
 pokecli location get kanto-route-1
+pokecli location list
 pokecli location area get kanto-route-1-area
+pokecli location area list
 ```
 
 ### Other main resources
 
 ```bash
 pokecli ability get intimidate
+pokecli ability list
 pokecli item get master-ball
+pokecli item list
 pokecli type get fire
+pokecli type list
 pokecli nature get modest
+pokecli nature list
 pokecli berry get oran
+pokecli berry list
 ```
 
 ### Cache
@@ -153,23 +167,21 @@ pokecli cache clear --resource pokemon
 
 ## Output format guidance
 
-Prefer the default table output.
+Always use `--format toon` when calling pokecli:
 
-Use `--format json` only when the next shell step actually needs JSON, and only when you also have a parser step planned, for example `jq` or a Python script.
+```bash
+pokecli pokemon get pikachu --format toon
+pokecli move get thunderbolt --format toon
+pokecli pokemon moves charizard --format toon
+```
 
-Good:
+The output includes contextual `help[]` hints suggesting logical next steps.
+
+Only use `--format json` when piping to `jq` or another JSON parser:
 
 ```bash
 pokecli game pokedex get kanto --format json | jq -r '.pokemon_entries[].pokemon_species.name'
 ```
-
-Avoid:
-
-```bash
-pokecli pokemon get pikachu --format json
-```
-
-Use the table output instead when you are just reading the result in the terminal.
 
 ## Multi-step workflows
 

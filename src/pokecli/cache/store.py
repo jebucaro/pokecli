@@ -23,11 +23,6 @@ RESOURCE_TABLES = [
     "pokedex",
     "machine",
     "pokemon-form",
-    "egg-group",
-    "growth-rate",
-    "evolution-trigger",
-    "move-damage-class",
-    "move-learn-method",
 ]
 
 

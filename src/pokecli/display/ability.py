@@ -19,3 +19,5 @@ def render_ability(ability: Ability, console: Console) -> None:
     if english_effects:
         console.print(f"[bold]Effect:[/bold] {english_effects[0].short_effect}\n")
         console.print(f"[dim]{english_effects[0].effect}[/dim]")
+    else:
+        console.print("[dim]No English effect text available.[/dim]")
