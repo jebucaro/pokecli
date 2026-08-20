@@ -15,6 +15,9 @@ from pokecli.display.common import render_json, render_list
 from pokecli.display.game import render_version_group
 from pokecli.models.game import VersionGroup
 
+_HINT_KEY = "version_group.list"
+_HINT_RESOURCE = "game version-group"
+
 app = typer.Typer(
     help="Look up version groups like red-blue or sword-shield."
 )
@@ -43,7 +46,7 @@ def get(
         from pokecli.display.toon import toon_single, print_toon
         from pokecli.display.toon_schemas import version_group_toon
         from pokecli.display.hints import get_hints, format_hints_toon
-        hints = get_hints("version_group.list", {"resource": "game version-group", "first_name": vg.name})
+        hints = get_hints(_HINT_KEY, {"resource": _HINT_RESOURCE, "first_name": vg.name})
         fields = version_group_toon(vg)
         print_toon(toon_single("version_group", fields))
         hint_text = format_hints_toon(hints)
@@ -51,7 +54,7 @@ def get(
             print_toon("\n" + hint_text)
     else:
         from pokecli.display.hints import get_hints, format_hints_table
-        hints = get_hints("version_group.list", {"resource": "game version-group", "first_name": vg.name})
+        hints = get_hints(_HINT_KEY, {"resource": _HINT_RESOURCE, "first_name": vg.name})
         render_version_group(vg, console)
         if hints:
             console.print(format_hints_table(hints))
@@ -69,7 +72,7 @@ def list_version_groups(
     result = fetch_list(client, "version-group", limit, offset, err_console)
     from pokecli.display.hints import get_hints, format_hints_toon, format_hints_table
     first_name = result.results[0].name if result.results else None
-    hints = get_hints("version_group.list", {"resource": "game version-group", "first_name": first_name})
+    hints = get_hints(_HINT_KEY, {"resource": _HINT_RESOURCE, "first_name": first_name})
     if format == "toon":
         from pokecli.display.toon import toon_list, print_toon
         from pokecli.display.toon_schemas import resource_list_toon

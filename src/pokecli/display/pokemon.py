@@ -79,6 +79,28 @@ def render_pokemon(pokemon: Pokemon, console: Console) -> None:
     console.print(stats_table)
 
 
+def _render_move_summary(
+    moves: list[PokemonMoveEntry], console: Console, chars
+) -> None:
+    """Render the method breakdown summary below the moves table."""
+    from collections import Counter
+
+    counts = Counter(m.learn_method for m in moves)
+    total = sum(counts.values())
+    separator = f"  {chars.bullet}  "
+    parts = []
+    for method in ("level-up", "machine", "egg", "tutor"):
+        if method in counts:
+            color = METHOD_COLORS.get(method, "white")
+            parts.append(f"[{color}]{counts[method]} {method}[/]")
+    console.print()
+    console.print(
+        f"  [bold]{total} moves[/bold]  {chars.dash}  "
+        + separator.join(parts),
+        highlight=False,
+    )
+
+
 def render_pokemon_moves(
     name: str,
     moves: list[PokemonMoveEntry],
@@ -123,19 +145,4 @@ def render_pokemon_moves(
     console.print(table)
 
     if method_filter is None and moves:
-        from collections import Counter
-
-        counts = Counter(m.learn_method for m in moves)
-        total = sum(counts.values())
-        separator = f"  {chars.bullet}  "
-        parts = []
-        for method in ("level-up", "machine", "egg", "tutor"):
-            if method in counts:
-                color = METHOD_COLORS.get(method, "white")
-                parts.append(f"[{color}]{counts[method]} {method}[/]")
-        console.print()
-        console.print(
-            f"  [bold]{total} moves[/bold]  {chars.dash}  "
-            + separator.join(parts),
-            highlight=False,
-        )
+        _render_move_summary(moves, console, chars)

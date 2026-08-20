@@ -5,6 +5,8 @@ from rich.table import Table
 from pokecli.display.common import create_key_value_table, format_name, panel_title
 from pokecli.models.location import Location, LocationArea, Region
 
+_STYLE_HEADER = "bold cyan"
+
 
 def render_region(region: Region, console: Console) -> None:
     title = format_name(region.name)
@@ -25,7 +27,7 @@ def render_region(region: Region, console: Console) -> None:
     if region.locations:
         console.print(f"\n[bold]Locations ({len(region.locations)})[/bold]")
         loc_table = Table(show_lines=False, box=None)
-        loc_table.add_column("Name", style="bold cyan")
+        loc_table.add_column("Name", style=_STYLE_HEADER)
         for loc in region.locations:
             loc_table.add_row(loc.name)
         console.print(loc_table)
@@ -44,7 +46,7 @@ def render_location(loc: Location, console: Console) -> None:
     if loc.areas:
         console.print(f"\n[bold]Areas ({len(loc.areas)})[/bold]")
         area_table = Table(show_lines=False, box=None)
-        area_table.add_column("Name", style="bold cyan")
+        area_table.add_column("Name", style=_STYLE_HEADER)
         for area in loc.areas:
             area_table.add_row(area.name)
         console.print(area_table)
@@ -70,7 +72,7 @@ def render_location_area(area: LocationArea, console: Console) -> None:
         f"\n[bold]Pokemon Encounters ({len(area.pokemon_encounters)} species)[/bold]"
     )
     enc_table = Table(show_lines=False)
-    enc_table.add_column("Pokemon", style="bold cyan")
+    enc_table.add_column("Pokemon", style=_STYLE_HEADER)
     enc_table.add_column("Version", style="dim")
     enc_table.add_column("Method", style="white")
     enc_table.add_column("Chance", justify="right")
@@ -104,7 +106,7 @@ def render_encounters(pokemon_name: str, encounters: list, console: Console) -> 
         return
 
     table = Table(show_lines=False)
-    table.add_column("Location Area", style="bold cyan")
+    table.add_column("Location Area", style=_STYLE_HEADER)
     table.add_column("Version", style="dim")
     table.add_column("Method", style="white")
     table.add_column("Chance", justify="right")

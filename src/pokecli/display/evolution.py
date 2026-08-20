@@ -3,57 +3,12 @@ from rich.panel import Panel
 from rich.text import Text
 
 from pokecli.display.common import format_name, get_chars, uses_unicode
+from pokecli.display._evolution_helpers import describe_trigger as _describe_trigger
 from pokecli.models.evolution import (
     ChainLink,
-    EvolutionDetail,
     EvolutionChain,
     PokemonSpecies,
 )
-
-
-def _describe_trigger(detail: EvolutionDetail) -> str:
-    trigger = detail.trigger.name
-    parts = []
-
-    if trigger == "level-up":
-        if detail.min_level:
-            parts.append(f"level {detail.min_level}")
-        elif detail.min_happiness:
-            parts.append(f"happiness {detail.min_happiness}")
-        elif detail.min_beauty:
-            parts.append(f"beauty {detail.min_beauty}")
-        elif detail.min_affection:
-            parts.append(f"affection {detail.min_affection}")
-        elif detail.known_move:
-            parts.append(f"knowing {detail.known_move.name}")
-        elif detail.location:
-            parts.append(f"at {detail.location.name}")
-        else:
-            parts.append("level-up")
-        if detail.time_of_day:
-            parts.append(f"({detail.time_of_day})")
-        if detail.held_item:
-            parts.append(f"holding {detail.held_item.name}")
-        if detail.needs_overworld_rain:
-            parts.append("(rain)")
-        if detail.turn_upside_down:
-            parts.append("(upside-down)")
-    elif trigger == "use-item":
-        if detail.item:
-            parts.append(f"use {detail.item.name.replace('-', ' ')}")
-        else:
-            parts.append("use item")
-    elif trigger == "trade":
-        if detail.held_item:
-            parts.append(f"trade holding {detail.held_item.name.replace('-', ' ')}")
-        else:
-            parts.append("trade")
-    elif trigger == "shed":
-        parts.append("shed (level 20, empty slot, Pokeball)")
-    else:
-        parts.append(trigger.replace("-", " "))
-
-    return ", ".join(parts) if parts else trigger
 
 
 def _render_chain(

@@ -105,5 +105,5 @@ class TestContextManager:
         with CacheStore(db_path=str(tmp_path / "cache.json")) as store:
             store.set("pokemon", "pikachu", {"id": 25})
         # After close, TinyDB operations should raise
-        with pytest.raises(Exception):
+        with pytest.raises((OSError, ValueError, TypeError)):
             store.get("pokemon", "pikachu")

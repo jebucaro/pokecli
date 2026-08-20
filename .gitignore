@@ -9,5 +9,16 @@ wheels/
 # Virtual environments
 .venv
 
+# Environment variables (secrets)
+.env
+
+# Test coverage artifacts
+.coverage
+coverage.xml
+
+# SonarQube scanner working directory
+.scannerwork/
+.sonar/
+
 # superpowers specs/plans are working docs, not repo artifacts
 docs/superpowers/

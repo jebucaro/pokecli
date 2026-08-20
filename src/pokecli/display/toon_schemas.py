@@ -11,7 +11,8 @@ from pokecli.models.move import Move
 from pokecli.models.ability import Ability
 from pokecli.models.item import Item
 from pokecli.models.berry import Berry
-from pokecli.models.evolution import EvolutionChain, ChainLink, EvolutionDetail, PokemonSpecies
+from pokecli.models.evolution import EvolutionChain, ChainLink, PokemonSpecies
+from pokecli.display._evolution_helpers import describe_trigger as _describe_trigger
 from pokecli.models.location import Location, LocationArea, Region
 from pokecli.models.common import ListResult
 from pokecli.models.nature import Nature
@@ -338,52 +339,6 @@ def pokemon_form_toon(form: PokemonForm) -> list[tuple[str, str | None]]:
 # --- Evolution chain tree ---
 
 
-def _describe_trigger(detail: EvolutionDetail) -> str:
-    """Describe an evolution trigger in plain text."""
-    trigger = detail.trigger.name
-    parts: list[str] = []
-
-    if trigger == "level-up":
-        if detail.min_level:
-            parts.append(f"level {detail.min_level}")
-        elif detail.min_happiness:
-            parts.append(f"happiness {detail.min_happiness}")
-        elif detail.min_beauty:
-            parts.append(f"beauty {detail.min_beauty}")
-        elif detail.min_affection:
-            parts.append(f"affection {detail.min_affection}")
-        elif detail.known_move:
-            parts.append(f"knowing {detail.known_move.name}")
-        elif detail.location:
-            parts.append(f"at {detail.location.name}")
-        else:
-            parts.append("level-up")
-        if detail.time_of_day:
-            parts.append(f"({detail.time_of_day})")
-        if detail.held_item:
-            parts.append(f"holding {detail.held_item.name}")
-        if detail.needs_overworld_rain:
-            parts.append("(rain)")
-        if detail.turn_upside_down:
-            parts.append("(upside-down)")
-    elif trigger == "use-item":
-        if detail.item:
-            parts.append(f"use {detail.item.name.replace('-', ' ')}")
-        else:
-            parts.append("use item")
-    elif trigger == "trade":
-        if detail.held_item:
-            parts.append(f"trade holding {detail.held_item.name.replace('-', ' ')}")
-        else:
-            parts.append("trade")
-    elif trigger == "shed":
-        parts.append("shed (level 20, empty slot, Pokeball)")
-    else:
-        parts.append(trigger.replace("-", " "))
-
-    return ", ".join(parts) if parts else trigger
-
-
 def _render_chain_plain(link: ChainLink, lines: list[str], depth: int) -> None:
     """Recursively render an evolution chain as plain text tree lines."""
     name = link.species.name.capitalize()
@@ -431,7 +386,7 @@ def pokemon_moves_toon(
 
 
 def encounters_toon(
-    pokemon_name: str, encounters: list[dict]
+    _pokemon_name: str, encounters: list[dict]
 ) -> tuple[list[str], list[list[str | None]]]:
     """Transform encounter data into list schema.
 

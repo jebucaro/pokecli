@@ -14,6 +14,21 @@ console = Console()
 err_console = Console(stderr=True)
 
 
+def _render_get_toon(chain: EvolutionChain, _console: Console) -> None:
+    """Render an evolution chain in TOON format with hints."""
+    from pokecli.display.toon import toon_tree, print_toon
+    from pokecli.display.toon_schemas import evolution_chain_toon
+    from pokecli.display.hints import get_hints, format_hints_toon
+
+    base_name = chain.chain.species.name if chain.chain else None
+    hints = get_hints("pokemon.evolution", {"name": base_name}) if base_name else []
+    label, lines = evolution_chain_toon(chain)
+    print_toon(toon_tree(label, lines))
+    hint_text = format_hints_toon(hints)
+    if hint_text:
+        print_toon("\n" + hint_text)
+
+
 @app.command()
 def get(
     ctx: typer.Context,
@@ -32,16 +47,7 @@ def get(
     if format == "json":
         render_json(chain.model_dump(), console)
     elif format == "toon":
-        from pokecli.display.toon import toon_tree, print_toon
-        from pokecli.display.toon_schemas import evolution_chain_toon
-        from pokecli.display.hints import get_hints, format_hints_toon
-        base_name = chain.chain.species.name if chain.chain else None
-        hints = get_hints("pokemon.evolution", {"name": base_name}) if base_name else []
-        label, lines = evolution_chain_toon(chain)
-        print_toon(toon_tree(label, lines))
-        hint_text = format_hints_toon(hints)
-        if hint_text:
-            print_toon("\n" + hint_text)
+        _render_get_toon(chain, console)
     else:
         from pokecli.display.hints import get_hints, format_hints_table
         base_name = chain.chain.species.name if chain.chain else None

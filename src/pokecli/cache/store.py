@@ -36,13 +36,13 @@ class CacheStore:
         return self._db.table(resource)
 
     def get(self, resource: str, key: str) -> dict | None:
-        Record = Query()
-        result = self._table(resource).get(Record.key == key)
+        record = Query()
+        result = self._table(resource).get(record.key == key)
         return result["data"] if result else None
 
     def set(self, resource: str, key: str, data: dict) -> None:
-        Record = Query()
-        self._table(resource).upsert({"key": key, "data": data}, Record.key == key)
+        record = Query()
+        self._table(resource).upsert({"key": key, "data": data}, record.key == key)
 
     def clear(self, resource: str | None = None) -> int:
         if resource:

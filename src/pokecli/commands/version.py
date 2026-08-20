@@ -9,6 +9,9 @@ from pokecli.display.common import render_json, render_list
 from pokecli.display.game import render_version
 from pokecli.models.game import Version
 
+_HINT_KEY = "version.list"
+_HINT_RESOURCE = "game version"
+
 app = typer.Typer(help="Look up individual game versions like red or sword.")
 console = Console()
 err_console = Console(stderr=True)
@@ -35,7 +38,7 @@ def get(
         from pokecli.display.toon import toon_single, print_toon
         from pokecli.display.toon_schemas import version_toon
         from pokecli.display.hints import get_hints, format_hints_toon
-        hints = get_hints("version.list", {"resource": "game version", "first_name": version.name})
+        hints = get_hints(_HINT_KEY, {"resource": _HINT_RESOURCE, "first_name": version.name})
         fields = version_toon(version)
         print_toon(toon_single("version", fields))
         hint_text = format_hints_toon(hints)
@@ -43,7 +46,7 @@ def get(
             print_toon("\n" + hint_text)
     else:
         from pokecli.display.hints import get_hints, format_hints_table
-        hints = get_hints("version.list", {"resource": "game version", "first_name": version.name})
+        hints = get_hints(_HINT_KEY, {"resource": _HINT_RESOURCE, "first_name": version.name})
         render_version(version, console)
         if hints:
             console.print(format_hints_table(hints))
@@ -61,7 +64,7 @@ def list_versions(
     result = fetch_list(client, "version", limit, offset, err_console)
     from pokecli.display.hints import get_hints, format_hints_toon, format_hints_table
     first_name = result.results[0].name if result.results else None
-    hints = get_hints("version.list", {"resource": "game version", "first_name": first_name})
+    hints = get_hints(_HINT_KEY, {"resource": _HINT_RESOURCE, "first_name": first_name})
     if format == "toon":
         from pokecli.display.toon import toon_list, print_toon
         from pokecli.display.toon_schemas import resource_list_toon

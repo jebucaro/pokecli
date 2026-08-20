@@ -10,6 +10,9 @@ from pokecli.display.common import render_json, render_list
 from pokecli.display.pokemon_form import render_pokemon_form
 from pokecli.models.pokemon_form import PokemonForm
 
+_HINT_KEY = "pokemon_form.list"
+_HINT_RESOURCE = "pokemon form"
+
 app = typer.Typer(
     help="Inspect special forms like Mega, Alolan, and Gigantamax variants.",
     cls=ResourceGroup,
@@ -39,7 +42,7 @@ def get(
         from pokecli.display.toon import toon_single, print_toon
         from pokecli.display.toon_schemas import pokemon_form_toon
         from pokecli.display.hints import get_hints, format_hints_toon
-        hints = get_hints("pokemon_form.list", {"resource": "pokemon form", "first_name": form.name})
+        hints = get_hints(_HINT_KEY, {"resource": _HINT_RESOURCE, "first_name": form.name})
         fields = pokemon_form_toon(form)
         print_toon(toon_single("pokemon_form", fields))
         hint_text = format_hints_toon(hints)
@@ -47,7 +50,7 @@ def get(
             print_toon("\n" + hint_text)
     else:
         from pokecli.display.hints import get_hints, format_hints_table
-        hints = get_hints("pokemon_form.list", {"resource": "pokemon form", "first_name": form.name})
+        hints = get_hints(_HINT_KEY, {"resource": _HINT_RESOURCE, "first_name": form.name})
         render_pokemon_form(form, console)
         if hints:
             console.print(format_hints_table(hints))
@@ -65,7 +68,7 @@ def list_pokemon_forms(
     result = fetch_list(client, "pokemon-form", limit, offset, err_console)
     from pokecli.display.hints import get_hints, format_hints_toon, format_hints_table
     first_name = result.results[0].name if result.results else None
-    hints = get_hints("pokemon_form.list", {"resource": "pokemon form", "first_name": first_name})
+    hints = get_hints(_HINT_KEY, {"resource": _HINT_RESOURCE, "first_name": first_name})
     if format == "toon":
         from pokecli.display.toon import toon_list, print_toon
         from pokecli.display.toon_schemas import resource_list_toon
