@@ -43,13 +43,13 @@ def get(
     if format == "json":
         render_json(loc.model_dump(), console)
     elif format == "toon":
-        from pokecli.display.toon import toon_single, print_toon
+        import toons
+        from pokecli.display.toon import print_toon
         from pokecli.display.toon_schemas import location_toon
         from pokecli.display.hints import get_hints, format_hints_toon
         first_area = loc.areas[0].name if loc.areas else None
         hints = get_hints("location.get", {"name": loc.name, "first_area": first_area})
-        fields = location_toon(loc)
-        print_toon(toon_single("location", fields))
+        print_toon(toons.dumps({"location": location_toon(loc)}))
         hint_text = format_hints_toon(hints)
         if hint_text:
             print_toon("\n" + hint_text)
@@ -76,10 +76,12 @@ def list_locations(
     first_name = result.results[0].name if result.results else None
     hints = get_hints("location.list", {"resource": "location", "first_name": first_name})
     if format == "toon":
-        from pokecli.display.toon import toon_list, print_toon
+        import toons
+        from pokecli.display.toon import print_toon
         from pokecli.display.toon_schemas import resource_list_toon
-        schema_fields, rows = resource_list_toon(result)
-        print_toon(toon_list("locations", schema_fields, rows, total=result.count))
+        rows = resource_list_toon(result)
+        print_toon(f"count: {len(rows)} of {result.count} total")
+        print_toon(toons.dumps({"locations": rows}))
         hint_text = format_hints_toon(hints)
         if hint_text:
             print_toon("\n" + hint_text)

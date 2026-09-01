@@ -159,20 +159,16 @@ def get_hints(command: str, context: dict) -> list[str]:
 
 
 def format_hints_toon(hints: list[str]) -> str:
-    """Format hints as TOON help[] block.
+    """Format hints as a real TOON ``help[]`` array via ``toons.dumps``.
 
-    Example output:
-    help[3]:
-      Run `pokecli pokemon moves pikachu`
-      Run `pokecli pokemon evolution pikachu`
-      Run `pokecli pokemon encounters pikachu`
+    Produces a spec-compliant inline array, e.g.:
+    help[3]: pokecli pokemon moves pikachu,pokecli pokemon evolution pikachu,...
     """
     if not hints:
         return ""
-    lines = [f"help[{len(hints)}]:"]
-    for hint in hints:
-        lines.append(f"  Run `{hint}`")
-    return "\n".join(lines)
+    import toons
+
+    return toons.dumps({"help": hints})
 
 
 def format_hints_table(hints: list[str]) -> str:

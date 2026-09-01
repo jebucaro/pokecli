@@ -33,16 +33,17 @@ def get(
     if format == "json":
         render_json(pokemon_type.model_dump(), console)
     elif format == "toon":
-        from pokecli.display.toon import toon_single, print_toon
+        import toons
+        from pokecli.display.toon import print_toon
         from pokecli.display.toon_schemas import type_toon
         from pokecli.display.hints import get_hints, format_hints_toon
         super_effective = [r.name for r in pokemon_type.damage_relations.double_damage_to]
         hints = get_hints("type.get", {"name": pokemon_type.name, "super_effective": super_effective})
         fields = type_toon(pokemon_type)
         # Add aggregate: pokemon and move counts
-        fields.append(("pokemon_count", str(len(pokemon_type.pokemon))))
-        fields.append(("move_count", str(len(pokemon_type.moves))))
-        print_toon(toon_single("type", fields))
+        fields["pokemon_count"] = len(pokemon_type.pokemon)
+        fields["move_count"] = len(pokemon_type.moves)
+        print_toon(toons.dumps({"type": fields}))
         hint_text = format_hints_toon(hints)
         if hint_text:
             print_toon("\n" + hint_text)
@@ -69,10 +70,12 @@ def list_types(
     first_name = result.results[0].name if result.results else None
     hints = get_hints("type.list", {"resource": "type", "first_name": first_name})
     if format == "toon":
-        from pokecli.display.toon import toon_list, print_toon
+        import toons
+        from pokecli.display.toon import print_toon
         from pokecli.display.toon_schemas import resource_list_toon
-        schema_fields, rows = resource_list_toon(result)
-        print_toon(toon_list("types", schema_fields, rows, total=result.count))
+        rows = resource_list_toon(result)
+        print_toon(f"count: {len(rows)} of {result.count} total")
+        print_toon(toons.dumps({"types": rows}))
         hint_text = format_hints_toon(hints)
         if hint_text:
             print_toon("\n" + hint_text)

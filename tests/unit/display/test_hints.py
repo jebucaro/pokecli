@@ -133,7 +133,7 @@ class TestGetHintsOtherCommands:
 class TestFormatHintsToon:
     """Tests for format_hints_toon."""
 
-    def test_produces_correct_output(self):
+    def test_produces_inline_toon_array(self):
         hints = [
             "pokecli pokemon moves pikachu",
             "pokecli pokemon evolution pikachu",
@@ -141,16 +141,15 @@ class TestFormatHintsToon:
         ]
         result = format_hints_toon(hints)
         expected = (
-            "help[3]:\n"
-            "  Run `pokecli pokemon moves pikachu`\n"
-            "  Run `pokecli pokemon evolution pikachu`\n"
-            "  Run `pokecli pokemon encounters pikachu`"
+            "help[3]: pokecli pokemon moves pikachu,"
+            "pokecli pokemon evolution pikachu,"
+            "pokecli pokemon encounters pikachu"
         )
         assert result == expected
 
     def test_single_hint(self):
         result = format_hints_toon(["pokecli berry list"])
-        assert result == "help[1]:\n  Run `pokecli berry list`"
+        assert result == "help[1]: pokecli berry list"
 
     def test_empty_hints_returns_empty_string(self):
         result = format_hints_toon([])

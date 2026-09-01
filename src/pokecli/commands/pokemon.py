@@ -68,13 +68,13 @@ def get(
     if format == "json":
         render_json(pokemon.model_dump(), console)
     elif format == "toon":
-        from pokecli.display.toon import toon_single, print_toon
+        import toons
+        from pokecli.display.toon import print_toon
         from pokecli.display.toon_schemas import pokemon_toon
         fields = pokemon_toon(pokemon)
         # Add aggregate: total_moves from raw data
-        total_moves = len(data.get("moves", []))
-        fields.append(("total_moves", str(total_moves)))
-        print_toon(toon_single("pokemon", fields))
+        fields["total_moves"] = len(data.get("moves", []))
+        print_toon(toons.dumps({"pokemon": fields}))
         hint_text = format_hints_toon(hints)
         if hint_text:
             print_toon("\n" + hint_text)
@@ -135,22 +135,23 @@ def _render_move_check(
             )
             return True
     elif format == "toon":
-        from pokecli.display.toon import toon_kv, print_toon
+        import toons
+        from pokecli.display.toon import print_toon
 
         if matched:
-            print_toon(toon_kv([
-                ("pokemon", pokemon_name),
-                ("move", move_lower),
-                ("can_learn", "true"),
-                ("method", matched[0].learn_method),
-                ("level", str(matched[0].level) if matched[0].level > 0 else "-"),
-            ]))
+            print_toon(toons.dumps({
+                "pokemon": pokemon_name,
+                "move": move_lower,
+                "can_learn": True,
+                "method": matched[0].learn_method,
+                "level": matched[0].level if matched[0].level > 0 else None,
+            }))
         else:
-            print_toon(toon_kv([
-                ("pokemon", pokemon_name),
-                ("move", move_lower),
-                ("can_learn", "false"),
-            ]))
+            print_toon(toons.dumps({
+                "pokemon": pokemon_name,
+                "move": move_lower,
+                "can_learn": False,
+            }))
             return True
     else:
         if matched:
@@ -175,21 +176,22 @@ def _render_moves_empty(
             console,
         )
     elif format == "toon":
-        from pokecli.display.toon import toon_kv, print_toon
+        import toons
+        from pokecli.display.toon import print_toon
 
         if method is not None:
-            print_toon(toon_kv([
-                ("pokemon", pokemon_name),
-                ("method", method),
-                ("count", "0"),
-                ("result", f"No {method} moves found"),
-            ]))
+            print_toon(toons.dumps({
+                "pokemon": pokemon_name,
+                "method": method,
+                "count": 0,
+                "result": f"No {method} moves found",
+            }))
         else:
-            print_toon(toon_kv([
-                ("pokemon", pokemon_name),
-                ("count", "0"),
-                ("result", "No recorded moves"),
-            ]))
+            print_toon(toons.dumps({
+                "pokemon": pokemon_name,
+                "count": 0,
+                "result": "No recorded moves",
+            }))
     else:
         if method is not None:
             console.print(f"[dim]{pokemon_name} has no {method} moves.[/dim]")
@@ -205,20 +207,20 @@ def _render_moves_toon(
 ) -> None:
     """Render moves in TOON format with hints."""
     from collections import Counter
-    from pokecli.display.toon import toon_list, toon_kv, print_toon
+    import toons
+    from pokecli.display.toon import print_toon
     from pokecli.display.toon_schemas import pokemon_moves_toon
     from pokecli.display.hints import format_hints_toon
 
-    schema_fields, rows = pokemon_moves_toon(pokemon_name, pokemon_moves)
+    rows = pokemon_moves_toon(pokemon_name, pokemon_moves)
     method_counts = Counter(m.learn_method for m in pokemon_moves)
     methods_str = ", ".join(f"{k}:{v}" for k, v in sorted(method_counts.items()))
-    header = toon_kv([
-        ("pokemon", pokemon_name),
-        ("count", str(len(pokemon_moves))),
-        ("methods", methods_str),
-    ])
-    body = toon_list("moves", schema_fields, rows)
-    print_toon(header + "\n" + body)
+    print_toon(toons.dumps({
+        "pokemon": pokemon_name,
+        "count": len(pokemon_moves),
+        "methods": methods_str,
+        "moves": rows,
+    }))
     hint_text = format_hints_toon(hints)
     if hint_text:
         print_toon("\n" + hint_text)
@@ -260,7 +262,7 @@ def moves(
         _render_moves_empty(pokemon_name, method, format, console)
         return
 
-    from pokecli.display.hints import get_hints, format_hints_toon, format_hints_table
+    from pokecli.display.hints import get_hints, format_hints_table
     hints = get_hints("pokemon.moves", {"name": pokemon_name})
 
     if format == "json":
@@ -297,10 +299,10 @@ def species(
     if format == "json":
         render_json(poke_species.model_dump(), console)
     elif format == "toon":
-        from pokecli.display.toon import toon_single, print_toon
+        import toons
+        from pokecli.display.toon import print_toon
         from pokecli.display.toon_schemas import species_toon
-        fields = species_toon(poke_species)
-        print_toon(toon_single("species", fields))
+        print_toon(toons.dumps({"species": species_toon(poke_species)}))
         hint_text = format_hints_toon(hints)
         if hint_text:
             print_toon("\n" + hint_text)
@@ -354,10 +356,11 @@ def evolution(
     if format == "json":
         render_json(chain.model_dump(), console)
     elif format == "toon":
-        from pokecli.display.toon import toon_tree, print_toon
+        import toons
+        from pokecli.display.toon import print_toon
         from pokecli.display.toon_schemas import evolution_chain_toon
-        label, lines = evolution_chain_toon(chain)
-        print_toon(toon_tree(label, lines))
+        label, node = evolution_chain_toon(chain)
+        print_toon(toons.dumps({label: node}))
         hint_text = format_hints_toon(hints)
         if hint_text:
             print_toon("\n" + hint_text)
@@ -371,27 +374,26 @@ def _render_encounters_toon(
     pokemon_name: str, result: list, _console: Console
 ) -> None:
     """Render encounters in TOON format with hints."""
-    from pokecli.display.toon import toon_list, toon_kv, print_toon
+    import toons
+    from pokecli.display.toon import print_toon
     from pokecli.display.toon_schemas import encounters_toon
     from pokecli.display.hints import get_hints, format_hints_toon
 
     first_area = result[0]["location_area"]["name"] if result else None
     hints = get_hints("pokemon.encounters", {"name": pokemon_name, "first_area": first_area})
-    schema_fields, rows = encounters_toon(pokemon_name, result)
-    areas_count = len(result)
+    rows = encounters_toon(pokemon_name, result)
     if not result:
-        print_toon(toon_kv([
-            ("pokemon", pokemon_name),
-            ("areas", "0"),
-            ("result", "No recorded encounter locations"),
-        ]))
+        print_toon(toons.dumps({
+            "pokemon": pokemon_name,
+            "areas": 0,
+            "result": "No recorded encounter locations",
+        }))
     else:
-        header = toon_kv([
-            ("pokemon", pokemon_name),
-            ("areas", str(areas_count)),
-        ])
-        body = toon_list("encounters", schema_fields, rows)
-        print_toon(header + "\n" + body)
+        print_toon(toons.dumps({
+            "pokemon": pokemon_name,
+            "areas": len(result),
+            "encounters": rows,
+        }))
     hint_text = format_hints_toon(hints)
     if hint_text:
         print_toon("\n" + hint_text)
@@ -527,22 +529,26 @@ def forms(
         return
 
     if format == "toon":
-        from pokecli.display.toon import toon_list, toon_kv, print_toon
+        import toons
+        from pokecli.display.toon import print_toon
         if not varieties:
-            print_toon(toon_kv([
-                ("species", species_name),
-                ("count", "0"),
-                ("result", "No varieties recorded"),
-            ]))
+            print_toon(toons.dumps({
+                "species": species_name,
+                "count": 0,
+                "result": "No varieties recorded",
+            }))
         else:
-            header = toon_kv([("species", species_name)])
-            schema_fields = ["name", "is_default"]
             rows = [
-                [v.get("pokemon", {}).get("name", "-"), str(v.get("is_default", False)).lower()]
+                {
+                    "name": v.get("pokemon", {}).get("name", "-"),
+                    "is_default": bool(v.get("is_default", False)),
+                }
                 for v in varieties
             ]
-            body = toon_list("varieties", schema_fields, rows)
-            print_toon(header + "\n" + body)
+            print_toon(toons.dumps({
+                "species": species_name,
+                "varieties": rows,
+            }))
         hint_text = format_hints_toon(hints)
         if hint_text:
             print_toon("\n" + hint_text)
@@ -567,10 +573,12 @@ def list_pokemon(
     first_name = result.results[0].name if result.results else None
     hints = get_hints("pokemon.list", {"resource": "pokemon", "first_name": first_name})
     if format == "toon":
-        from pokecli.display.toon import toon_list, print_toon
+        import toons
+        from pokecli.display.toon import print_toon
         from pokecli.display.toon_schemas import resource_list_toon
-        schema_fields, rows = resource_list_toon(result)
-        print_toon(toon_list("pokemon", schema_fields, rows, total=result.count))
+        rows = resource_list_toon(result)
+        print_toon(f"count: {len(rows)} of {result.count} total")
+        print_toon(toons.dumps({"pokemon": rows}))
         hint_text = format_hints_toon(hints)
         if hint_text:
             print_toon("\n" + hint_text)

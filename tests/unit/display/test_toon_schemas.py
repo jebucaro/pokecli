@@ -69,13 +69,12 @@ class TestPokemonToon:
         )
 
         fields = pokemon_toon(pokemon)
-        fields_dict = dict(fields)
 
-        assert fields_dict["id"] == "25"
-        assert fields_dict["name"] == "pikachu"
-        assert fields_dict["types"] == "electric"
-        assert fields_dict["abilities"] == "static/lightning-rod"
-        assert fields_dict["stats"] == "35/55/40/50/50/90"
+        assert fields["id"] == 25
+        assert fields["name"] == "pikachu"
+        assert fields["types"] == "electric"
+        assert fields["abilities"] == "static/lightning-rod(H)"
+        assert fields["stats"] == "hp:35/atk:55/def:40/spa:50/spd:50/spe:90"
 
     def test_multiple_types(self):
         pokemon = Pokemon(
@@ -103,9 +102,8 @@ class TestPokemonToon:
         )
 
         fields = pokemon_toon(pokemon)
-        fields_dict = dict(fields)
 
-        assert fields_dict["types"] == "fire/flying"
+        assert fields["types"] == "fire/flying"
 
 
 class TestMoveToon:
@@ -131,16 +129,15 @@ class TestMoveToon:
         )
 
         fields = move_toon(move)
-        fields_dict = dict(fields)
 
-        assert fields_dict["id"] == "85"
-        assert fields_dict["name"] == "thunderbolt"
-        assert fields_dict["type"] == "electric"
-        assert fields_dict["class"] == "special"
-        assert fields_dict["power"] == "90"
-        assert fields_dict["accuracy"] == "100"
-        assert fields_dict["pp"] == "15"
-        assert fields_dict["effect"] == "Has a 10% chance to paralyze the target."
+        assert fields["id"] == 85
+        assert fields["name"] == "thunderbolt"
+        assert fields["type"] == "electric"
+        assert fields["class"] == "special"
+        assert fields["power"] == 90
+        assert fields["accuracy"] == 100
+        assert fields["pp"] == 15
+        assert fields["effect"] == "Has a 10% chance to paralyze the target."
 
     def test_none_power_and_accuracy(self):
         move = Move(
@@ -156,10 +153,9 @@ class TestMoveToon:
         )
 
         fields = move_toon(move)
-        fields_dict = dict(fields)
 
-        assert fields_dict["power"] is None
-        assert fields_dict["effect"] is None
+        assert fields["power"] is None
+        assert fields["effect"] is None
 
 
 class TestAbilityToon:
@@ -181,13 +177,12 @@ class TestAbilityToon:
         )
 
         fields = ability_toon(ability)
-        fields_dict = dict(fields)
 
-        assert fields_dict["id"] == "22"
-        assert fields_dict["name"] == "intimidate"
-        assert fields_dict["generation"] == "generation-iii"
-        assert fields_dict["pokemon_count"] == "2"
-        assert "Lowers opponents" in fields_dict["effect"]
+        assert fields["id"] == 22
+        assert fields["name"] == "intimidate"
+        assert fields["generation"] == "generation-iii"
+        assert fields["pokemon_count"] == 2
+        assert "Lowers opponents" in fields["effect"]
 
 
 class TestItemToon:
@@ -211,19 +206,18 @@ class TestItemToon:
         )
 
         fields = item_toon(item)
-        fields_dict = dict(fields)
 
-        assert fields_dict["id"] == "1"
-        assert fields_dict["name"] == "master-ball"
-        assert fields_dict["cost"] == "0"
-        assert fields_dict["category"] == "standard-balls"
-        assert "Catches a wild" in fields_dict["effect"]
+        assert fields["id"] == 1
+        assert fields["name"] == "master-ball"
+        assert fields["cost"] == 0
+        assert fields["category"] == "standard-balls"
+        assert "Catches a wild" in fields["effect"]
 
 
 class TestResourceListToon:
     """Tests for resource_list_toon."""
 
-    def test_produces_correct_schema(self):
+    def test_produces_list_of_dicts(self):
         result = ListResult(
             count=1010,
             next="https://pokeapi.co/api/v2/pokemon?offset=20&limit=20",
@@ -235,10 +229,13 @@ class TestResourceListToon:
             ],
         )
 
-        schema_fields, rows = resource_list_toon(result)
+        rows = resource_list_toon(result)
 
-        assert schema_fields == ["name"]
-        assert rows == [["bulbasaur"], ["ivysaur"], ["venusaur"]]
+        assert rows == [
+            {"name": "bulbasaur"},
+            {"name": "ivysaur"},
+            {"name": "venusaur"},
+        ]
 
     def test_empty_results(self):
         result = ListResult(
@@ -248,32 +245,30 @@ class TestResourceListToon:
             results=[],
         )
 
-        schema_fields, rows = resource_list_toon(result)
+        rows = resource_list_toon(result)
 
-        assert schema_fields == ["name"]
         assert rows == []
 
 
 class TestPokemonMovesToon:
     """Tests for pokemon_moves_toon."""
 
-    def test_produces_correct_schema_and_rows(self):
+    def test_produces_uniform_rows(self):
         moves = [
             PokemonMoveEntry(name="thunderbolt", learn_method="level-up", level=26),
             PokemonMoveEntry(name="thunder", learn_method="machine", level=0),
         ]
 
-        schema_fields, rows = pokemon_moves_toon("pikachu", moves)
+        rows = pokemon_moves_toon("pikachu", moves)
 
-        assert schema_fields == ["name", "method", "level"]
-        assert rows[0] == ["thunderbolt", "level-up", "26"]
-        assert rows[1] == ["thunder", "machine", None]
+        assert rows[0] == {"name": "thunderbolt", "method": "level-up", "level": 26}
+        assert rows[1] == {"name": "thunder", "method": "machine", "level": None}
 
 
 class TestEncountersToon:
     """Tests for encounters_toon."""
 
-    def test_produces_correct_schema_and_rows(self):
+    def test_produces_uniform_rows(self):
         encounters = [
             {
                 "location_area": {"name": "viridian-forest-area"},
@@ -294,10 +289,15 @@ class TestEncountersToon:
             }
         ]
 
-        schema_fields, rows = encounters_toon("pikachu", encounters)
+        rows = encounters_toon("pikachu", encounters)
 
-        assert schema_fields == ["area", "version", "method", "chance", "levels"]
-        assert rows[0] == ["viridian-forest-area", "red", "walk", "5%", "3-5"]
+        assert rows[0] == {
+            "area": "viridian-forest-area",
+            "version": "red",
+            "method": "walk",
+            "chance": "5%",
+            "levels": "3-5",
+        }
 
     def test_same_level_range(self):
         encounters = [
@@ -320,8 +320,8 @@ class TestEncountersToon:
             }
         ]
 
-        _, rows = encounters_toon("pikachu", encounters)
-        assert rows[0][4] == "5"
+        rows = encounters_toon("pikachu", encounters)
+        assert rows[0]["levels"] == "5"
 
 
 class TestEvolutionChainToon:
@@ -359,12 +359,17 @@ class TestEvolutionChainToon:
             ),
         )
 
-        label, lines = evolution_chain_toon(chain)
+        label, node = evolution_chain_toon(chain)
 
         assert label == "evolution_chain_1"
-        assert lines[0] == "Bulbasaur"
-        assert lines[1] == "  -> Ivysaur (level 16)"
-        assert lines[2] == "    -> Venusaur (level 32)"
+        assert node["name"] == "bulbasaur"
+        assert node["trigger"] is None
+        ivysaur = node["evolves_to"][0]
+        assert ivysaur["name"] == "ivysaur"
+        assert ivysaur["trigger"] == "level 16"
+        venusaur = ivysaur["evolves_to"][0]
+        assert venusaur["name"] == "venusaur"
+        assert venusaur["trigger"] == "level 32"
 
     def test_branching_chain(self):
         chain = EvolutionChain(
@@ -397,12 +402,15 @@ class TestEvolutionChainToon:
             ),
         )
 
-        label, lines = evolution_chain_toon(chain)
+        label, node = evolution_chain_toon(chain)
 
         assert label == "evolution_chain_67"
-        assert lines[0] == "Eevee"
-        assert lines[1] == "  -> Vaporeon (use water stone)"
-        assert lines[2] == "  -> Jolteon (use thunder stone)"
+        assert node["name"] == "eevee"
+        children = node["evolves_to"]
+        assert children[0]["name"] == "vaporeon"
+        assert children[0]["trigger"] == "use water stone"
+        assert children[1]["name"] == "jolteon"
+        assert children[1]["trigger"] == "use thunder stone"
 
 
 class TestTypeToon:
@@ -425,14 +433,13 @@ class TestTypeToon:
         )
 
         fields = type_toon(type_data)
-        fields_dict = dict(fields)
 
-        assert fields_dict["id"] == "10"
-        assert fields_dict["name"] == "fire"
-        assert fields_dict["double_damage_to"] == "grass/ice"
-        assert fields_dict["half_damage_to"] == "water/rock"
-        assert fields_dict["no_damage_to"] is None
-        assert fields_dict["double_damage_from"] == "water/ground"
+        assert fields["id"] == 10
+        assert fields["name"] == "fire"
+        assert fields["double_damage_to"] == "grass/ice"
+        assert fields["half_damage_to"] == "water/rock"
+        assert fields["no_damage_to"] is None
+        assert fields["double_damage_from"] == "water/ground"
 
 
 class TestNatureToon:
@@ -449,14 +456,13 @@ class TestNatureToon:
         )
 
         fields = nature_toon(nature)
-        fields_dict = dict(fields)
 
-        assert fields_dict["id"] == "1"
-        assert fields_dict["name"] == "adamant"
-        assert fields_dict["increased_stat"] == "attack"
-        assert fields_dict["decreased_stat"] == "special-attack"
-        assert fields_dict["likes_flavor"] == "spicy"
-        assert fields_dict["hates_flavor"] == "dry"
+        assert fields["id"] == 1
+        assert fields["name"] == "adamant"
+        assert fields["increased_stat"] == "attack"
+        assert fields["decreased_stat"] == "special-attack"
+        assert fields["likes_flavor"] == "spicy"
+        assert fields["hates_flavor"] == "dry"
 
     def test_neutral_nature(self):
         nature = Nature(
@@ -469,10 +475,9 @@ class TestNatureToon:
         )
 
         fields = nature_toon(nature)
-        fields_dict = dict(fields)
 
-        assert fields_dict["increased_stat"] is None
-        assert fields_dict["decreased_stat"] is None
+        assert fields["increased_stat"] is None
+        assert fields["decreased_stat"] is None
 
 
 class TestMachineToon:
@@ -487,12 +492,11 @@ class TestMachineToon:
         )
 
         fields = machine_toon(machine)
-        fields_dict = dict(fields)
 
-        assert fields_dict["id"] == "1"
-        assert fields_dict["item"] == "tm01"
-        assert fields_dict["move"] == "mega-punch"
-        assert fields_dict["version_group"] == "red-blue"
+        assert fields["id"] == 1
+        assert fields["item"] == "tm01"
+        assert fields["move"] == "mega-punch"
+        assert fields["version_group"] == "red-blue"
 
 
 class TestRegionToon:
@@ -508,13 +512,12 @@ class TestRegionToon:
         )
 
         fields = region_toon(region)
-        fields_dict = dict(fields)
 
-        assert fields_dict["id"] == "1"
-        assert fields_dict["name"] == "kanto"
-        assert fields_dict["main_generation"] == "generation-i"
-        assert fields_dict["locations_count"] == "2"
-        assert fields_dict["pokedexes"] == "kanto"
+        assert fields["id"] == 1
+        assert fields["name"] == "kanto"
+        assert fields["main_generation"] == "generation-i"
+        assert fields["locations_count"] == 2
+        assert fields["pokedexes"] == "kanto"
 
 
 class TestLocationToon:
@@ -529,9 +532,8 @@ class TestLocationToon:
         )
 
         fields = location_toon(location)
-        fields_dict = dict(fields)
 
-        assert fields_dict["id"] == "1"
-        assert fields_dict["name"] == "canalave-city"
-        assert fields_dict["region"] == "sinnoh"
-        assert fields_dict["areas"] == "1"
+        assert fields["id"] == 1
+        assert fields["name"] == "canalave-city"
+        assert fields["region"] == "sinnoh"
+        assert fields["areas"] == 1

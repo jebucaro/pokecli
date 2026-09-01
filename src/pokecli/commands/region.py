@@ -33,13 +33,13 @@ def get(
     if format == "json":
         render_json(region.model_dump(), console)
     elif format == "toon":
-        from pokecli.display.toon import toon_single, print_toon
+        import toons
+        from pokecli.display.toon import print_toon
         from pokecli.display.toon_schemas import region_toon
         from pokecli.display.hints import get_hints, format_hints_toon
         first_location = region.locations[0].name if region.locations else None
         hints = get_hints("region.get", {"name": region.name, "first_location": first_location})
-        fields = region_toon(region)
-        print_toon(toon_single("region", fields))
+        print_toon(toons.dumps({"region": region_toon(region)}))
         hint_text = format_hints_toon(hints)
         if hint_text:
             print_toon("\n" + hint_text)
@@ -66,10 +66,12 @@ def list_regions(
     first_name = result.results[0].name if result.results else None
     hints = get_hints("region.list", {"resource": "game region", "first_name": first_name})
     if format == "toon":
-        from pokecli.display.toon import toon_list, print_toon
+        import toons
+        from pokecli.display.toon import print_toon
         from pokecli.display.toon_schemas import resource_list_toon
-        schema_fields, rows = resource_list_toon(result)
-        print_toon(toon_list("regions", schema_fields, rows, total=result.count))
+        rows = resource_list_toon(result)
+        print_toon(f"count: {len(rows)} of {result.count} total")
+        print_toon(toons.dumps({"regions": rows}))
         hint_text = format_hints_toon(hints)
         if hint_text:
             print_toon("\n" + hint_text)

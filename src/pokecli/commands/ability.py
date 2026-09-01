@@ -39,12 +39,12 @@ def get(
     if format == "json":
         render_json(ability.model_dump(), console)
     elif format == "toon":
-        from pokecli.display.toon import toon_single, print_toon
+        import toons
+        from pokecli.display.toon import print_toon
         from pokecli.display.toon_schemas import ability_toon
         from pokecli.display.hints import get_hints, format_hints_toon
         hints = get_hints("ability.get", {"name": ability.name})
-        fields = ability_toon(ability)
-        print_toon(toon_single("ability", fields))
+        print_toon(toons.dumps({"ability": ability_toon(ability)}))
         hint_text = format_hints_toon(hints)
         if hint_text:
             print_toon("\n" + hint_text)
@@ -70,10 +70,12 @@ def list_abilities(
     first_name = result.results[0].name if result.results else None
     hints = get_hints("ability.list", {"resource": "ability", "first_name": first_name})
     if format == "toon":
-        from pokecli.display.toon import toon_list, print_toon
+        import toons
+        from pokecli.display.toon import print_toon
         from pokecli.display.toon_schemas import resource_list_toon
-        schema_fields, rows = resource_list_toon(result)
-        print_toon(toon_list("abilities", schema_fields, rows, total=result.count))
+        rows = resource_list_toon(result)
+        print_toon(f"count: {len(rows)} of {result.count} total")
+        print_toon(toons.dumps({"abilities": rows}))
         hint_text = format_hints_toon(hints)
         if hint_text:
             print_toon("\n" + hint_text)

@@ -32,12 +32,12 @@ def get(
     if format == "json":
         render_json(nature.model_dump(), console)
     elif format == "toon":
-        from pokecli.display.toon import toon_single, print_toon
+        import toons
+        from pokecli.display.toon import print_toon
         from pokecli.display.toon_schemas import nature_toon
         from pokecli.display.hints import get_hints, format_hints_toon
         hints = get_hints("nature.get", {"name": nature.name})
-        fields = nature_toon(nature)
-        print_toon(toon_single("nature", fields))
+        print_toon(toons.dumps({"nature": nature_toon(nature)}))
         hint_text = format_hints_toon(hints)
         if hint_text:
             print_toon("\n" + hint_text)
@@ -63,10 +63,12 @@ def list_natures(
     first_name = result.results[0].name if result.results else None
     hints = get_hints("nature.list", {"resource": "nature", "first_name": first_name})
     if format == "toon":
-        from pokecli.display.toon import toon_list, print_toon
+        import toons
+        from pokecli.display.toon import print_toon
         from pokecli.display.toon_schemas import resource_list_toon
-        schema_fields, rows = resource_list_toon(result)
-        print_toon(toon_list("natures", schema_fields, rows, total=result.count))
+        rows = resource_list_toon(result)
+        print_toon(f"count: {len(rows)} of {result.count} total")
+        print_toon(toons.dumps({"natures": rows}))
         hint_text = format_hints_toon(hints)
         if hint_text:
             print_toon("\n" + hint_text)

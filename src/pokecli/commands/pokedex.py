@@ -32,12 +32,12 @@ def get(
     if format == "json":
         render_json(pdx.model_dump(), console)
     elif format == "toon":
-        from pokecli.display.toon import toon_single, print_toon
+        import toons
+        from pokecli.display.toon import print_toon
         from pokecli.display.toon_schemas import pokedex_toon
         from pokecli.display.hints import get_hints, format_hints_toon
         hints = get_hints("pokedex.get", {"name": pdx.name})
-        fields = pokedex_toon(pdx)
-        print_toon(toon_single("pokedex", fields))
+        print_toon(toons.dumps({"pokedex": pokedex_toon(pdx)}))
         hint_text = format_hints_toon(hints)
         if hint_text:
             print_toon("\n" + hint_text)
@@ -63,10 +63,12 @@ def list_pokedexes(
     first_name = result.results[0].name if result.results else None
     hints = get_hints("pokedex.list", {"resource": "game pokedex", "first_name": first_name})
     if format == "toon":
-        from pokecli.display.toon import toon_list, print_toon
+        import toons
+        from pokecli.display.toon import print_toon
         from pokecli.display.toon_schemas import resource_list_toon
-        schema_fields, rows = resource_list_toon(result)
-        print_toon(toon_list("pokedexes", schema_fields, rows, total=result.count))
+        rows = resource_list_toon(result)
+        print_toon(f"count: {len(rows)} of {result.count} total")
+        print_toon(toons.dumps({"pokedexes": rows}))
         hint_text = format_hints_toon(hints)
         if hint_text:
             print_toon("\n" + hint_text)

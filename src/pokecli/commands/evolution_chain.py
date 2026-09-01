@@ -16,14 +16,15 @@ err_console = Console(stderr=True)
 
 def _render_get_toon(chain: EvolutionChain, _console: Console) -> None:
     """Render an evolution chain in TOON format with hints."""
-    from pokecli.display.toon import toon_tree, print_toon
+    import toons
+    from pokecli.display.toon import print_toon
     from pokecli.display.toon_schemas import evolution_chain_toon
     from pokecli.display.hints import get_hints, format_hints_toon
 
     base_name = chain.chain.species.name if chain.chain else None
     hints = get_hints("pokemon.evolution", {"name": base_name}) if base_name else []
-    label, lines = evolution_chain_toon(chain)
-    print_toon(toon_tree(label, lines))
+    label, node = evolution_chain_toon(chain)
+    print_toon(toons.dumps({label: node}))
     hint_text = format_hints_toon(hints)
     if hint_text:
         print_toon("\n" + hint_text)
@@ -71,10 +72,12 @@ def list_chains(
     first_name = result.results[0].name if result.results else None
     hints = get_hints("evolution_chain.list", {"resource": "pokemon evolution-chain", "first_name": first_name})
     if format == "toon":
-        from pokecli.display.toon import toon_list, print_toon
+        import toons
+        from pokecli.display.toon import print_toon
         from pokecli.display.toon_schemas import resource_list_toon
-        schema_fields, rows = resource_list_toon(result)
-        print_toon(toon_list("evolution_chains", schema_fields, rows, total=result.count))
+        rows = resource_list_toon(result)
+        print_toon(f"count: {len(rows)} of {result.count} total")
+        print_toon(toons.dumps({"evolution_chains": rows}))
         hint_text = format_hints_toon(hints)
         if hint_text:
             print_toon("\n" + hint_text)
