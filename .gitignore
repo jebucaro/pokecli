@@ -22,3 +22,5 @@ coverage.xml
 
 # superpowers specs/plans are working docs, not repo artifacts
 docs/superpowers/
+.kiro
+openspec
