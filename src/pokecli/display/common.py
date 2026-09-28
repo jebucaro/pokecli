@@ -2,7 +2,6 @@ import json
 from types import SimpleNamespace
 
 from rich.console import Console
-from rich.syntax import Syntax
 from rich.table import Table
 
 from pokecli.models.common import ListResult
@@ -95,5 +94,14 @@ def render_list(result: ListResult, console: Console) -> None:
 
 
 def render_json(data: dict, console: Console) -> None:
-    syntax = Syntax(json.dumps(data, indent=2), "json", theme="monokai")
-    console.print(syntax)
+    """Write JSON to stdout as plain text.
+
+    Deliberately bypasses Rich. Rendering through ``rich.syntax.Syntax``
+    truncates every line at the console width - 80 columns when piped - which
+    silently corrupts long string values such as sprite URLs and produces
+    unparseable output. JSON is the format callers pipe into a parser, so it
+    carries no styling, no wrapping, and no truncation.
+
+    ``console`` is accepted for signature symmetry with the other renderers.
+    """
+    print(json.dumps(data, indent=2, default=str))

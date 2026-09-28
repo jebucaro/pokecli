@@ -1,141 +1,155 @@
 # pokecli Multi-Step Workflows
 
-Recipes for questions that span multiple resources.
+Recipes for questions that span more than one command.
+
+Output is TOON automatically when piped, so none of these pass `--format`.
+`--format json` appears only where the next step is `jq`.
 
 ## Where can I catch Pokemon X?
 
-Fastest path:
-
 ```bash
-pokecli pokemon encounters pikachu --format toon
+pokecli encounters pikachu
 ```
 
-Short manual alias:
+Then inspect one area in detail:
 
 ```bash
-pokecli pokemon where pikachu
+pokecli get location-area trophy-garden-area
 ```
 
-Shell scripting variant only, requires `jq`:
+Shell scripting variant, requires `jq`:
 
 ```bash
-pokecli pokemon encounters pikachu --format json
-```
-
-Inspect one encounter area in detail:
-
-```bash
-pokecli location area get trophy-garden-area --format toon
+pokecli encounters pikachu --format json | jq -r '.encounters[].location_area.name'
 ```
 
 ## What lives at Route N in region R?
 
-Top-down traversal: region, then location, then area.
+Top-down: region, then location, then area.
 
 ```bash
-# 1. List locations in a region
-pokecli game region get kanto --format toon
-
-# 2. Inspect the location to find sub-areas
-pokecli location get kanto-route-1 --format toon
-
-# 3. Inspect the encounter area
-pokecli location area get kanto-route-1-area --format toon
+pokecli get region kanto
+pokecli get location kanto-route-1
+pokecli get location-area kanto-route-1-area
 ```
 
-Shell scripting variant only, requires `jq`:
+Shell scripting variant, requires `jq`:
 
 ```bash
-pokecli game region get kanto --format json | jq '.locations[].name'
-pokecli location area get kanto-route-1-area --format json \
-  | jq '.pokemon_encounters[].pokemon.name'
+pokecli get region kanto --format json | jq -r '.locations[].name'
+pokecli get location-area kanto-route-1-area --format json \
+  | jq -r '.pokemon_encounters[].pokemon.name'
 ```
+
+## I only remember part of the name
+
+`search` matches any substring of a resource name, case-insensitively. Reach for
+it instead of paging `list` when the resource is large.
+
+```bash
+pokecli search pokemon char
+pokecli search item ball
+pokecli search move thunder
+pokecli search location-area route-1
+```
+
+The first search for a resource fetches and caches its name index; later
+searches on that resource cost no request.
 
 ## What's new in Generation N?
 
 ```bash
-pokecli game generation get generation-i --format toon
+pokecli get generation generation-i
 ```
 
-Shell scripting variant only, requires `jq`:
+Shell scripting variant, requires `jq`:
 
 ```bash
-pokecli game generation get generation-iii --format json \
+pokecli get generation generation-iii --format json \
   | jq -r '.pokemon_species[].name' | sort
 ```
 
 ## Regional Pokedex listing
 
 ```bash
-pokecli game pokedex get kanto --format toon
+pokecli get pokedex kanto
 ```
 
-Shell scripting variant only, requires `jq`:
+Shell scripting variant, requires `jq`:
 
 ```bash
-pokecli game pokedex get kanto --format json \
+pokecli get pokedex kanto --format json \
   | jq -r '.pokemon_entries[] | "\(.entry_number) \(.pokemon_species.name)"'
 ```
 
 ## Which TM teaches a move?
 
-pokecli has no move-to-machine index. `game machine get <id>` only works once you already
-have the numeric ID; `move get` and `pokemon moves` never surface it:
+pokecli has no move-to-machine index, and PokeAPI does not expose one. `get
+machine <id>` works only once you already have the numeric ID, and neither `get
+move` nor `moves` surfaces it.
+
+Do not try to reconstruct the mapping by guessing machine IDs across generations
+or by querying PokeAPI outside pokecli. That burns many round trips for an answer
+that is still likely wrong.
+
+If the user already has a TM number from an in-game label or an earlier lookup:
 
 ```bash
-pokecli move get thunderbolt --format toon
+pokecli get machine 79
 ```
 
-Do not try to reconstruct the mapping by guessing machine IDs across generations or by
-querying the PokeAPI directly outside pokecli — that burns many round trips for an answer
-that's still likely wrong, and it defeats the point of using the CLI.
-
-If the user already has a machine ID or TM/TR number (from an in-game label, a previous
-lookup, etc.), look it up directly:
+If they do not, say pokecli cannot resolve a move name to its TM number, and
+answer the question they probably meant instead — whether the Pokemon can learn
+it by machine:
 
 ```bash
-pokecli game machine get 79 --format toon
+pokecli can-learn charizard thunderbolt --method machine
 ```
 
-Otherwise, tell the user pokecli can't resolve a move name to its TM/machine number on its
-own, and offer to browse instead (paginated, 20 per page):
+To explore what machines exist at all:
 
 ```bash
-pokecli game machine list
-```
-
-Cross-referencing learnability only needs the move name, not a machine ID:
-
-```bash
-pokecli pokemon can-learn charizard thunderbolt --method machine --format toon
+pokecli search machine tm
+pokecli list machine --limit 50
 ```
 
 ## Full Pokemon profile
 
-Use the Pokemon command family to build context quickly:
-
 ```bash
-pokecli pokemon get pikachu --format toon
-pokecli pokemon species pikachu --format toon
-pokecli pokemon evolution pikachu --format toon
-pokecli pokemon forms pikachu --format toon
-pokecli pokemon encounters pikachu --format toon
-pokecli pokemon moves pikachu --format toon
+pokecli get pokemon pikachu
+pokecli get pokemon-species pikachu
+pokecli evolution pikachu
+pokecli forms pikachu
+pokecli encounters pikachu
+pokecli moves pikachu
 ```
 
-## Alternative form inspection
+## Alternate form inspection
 
-List varieties, then inspect a specific form.
+List varieties, then inspect one.
 
 ```bash
-pokecli pokemon forms charizard --format toon
-pokecli pokemon form get charizard-mega-x --format toon
+pokecli forms charizard
+pokecli get pokemon-form charizard-mega-x
 ```
 
 ## Evolution chain by chain ID
 
-If you already have a chain ID, skip the species lookup:
+`evolution <pokemon>` resolves the chain for you and is the normal path. Use the
+chain ID directly only when you already have one:
 
 ```bash
-pokecli pokemon evolution-chain get 67 --format toon
+pokecli get evolution-chain 2
+```
+
+## Checking learnability in a script
+
+`can-learn` returns its answer as an exit code, so it composes directly:
+
+```bash
+for p in pikachu charizard gyarados; do
+  if pokecli can-learn "$p" surf >/dev/null; then
+    echo "$p can learn surf"
+  fi
+done
 ```
