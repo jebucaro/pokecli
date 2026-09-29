@@ -58,3 +58,24 @@ def test_game_help_mentions_both_forms():
 
     assert "red-blue" in GAME_FILTER
     assert "red" in GAME_FILTER
+
+
+@pytest.mark.parametrize(
+    ("name", "base"),
+    [
+        ("the-isle-of-armor-sword", "sword-shield"),
+        ("the-crown-tundra", "sword-shield"),
+        ("the-teal-mask", "scarlet-violet"),
+        ("the-indigo-disk-violet", "scarlet-violet"),
+        ("mega-dimension", "legends-za"),
+    ],
+)
+def test_dlc_learnsets_include_the_base_game(name, base):
+    """PokeAPI stores DLC learnsets under the base game's group."""
+    scope = resolve_game(name)
+    assert base in scope.version_groups
+    assert base not in scope.versions
+
+
+def test_base_game_does_not_pull_in_dlc():
+    assert resolve_game("sword-shield").version_groups == frozenset({"sword-shield"})

@@ -107,8 +107,10 @@ def _hints_get_pokemon_form(ctx: dict) -> list[str]:
 
 def _hints_moves(ctx: dict) -> list[str]:
     name = ctx.get("name", "")
+    game = ctx.get("game")
+    scope = f" --game {game}" if game else ""
     return [
-        f"pokecli can-learn {name} {MOVE_PLACEHOLDER}",
+        f"pokecli can-learn {name} {MOVE_PLACEHOLDER}{scope}",
         f"pokecli get pokemon {name}",
     ]
 

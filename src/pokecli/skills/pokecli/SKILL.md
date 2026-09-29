@@ -45,6 +45,7 @@ This is every option pokecli accepts, so there's no need to read help output.
 | `--variant` | `sprite` | `front_default` (default), `front_shiny`, `back_default`, `back_shiny`, `front_female`, `front_shiny_female` |
 | `--resource` | `cache clear` | one resource name, to clear only that table |
 | `--skills`, `--local`, `--agent` | `install` | installs this skill; not needed for queries |
+
 When the user names a game, pass `--game`. Without it, results merge every game
 and each move shows the newest game's method.
 

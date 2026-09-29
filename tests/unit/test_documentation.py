@@ -265,3 +265,12 @@ def test_readme_documents_the_context_dependent_format_default():
     readme = (REPO_ROOT / "README.md").read_text(encoding="utf-8")
     assert "interactive terminal" in readme
     assert "toon" in readme
+
+
+def test_skill_options_table_ends_before_following_prose():
+    """A line right after a table without a blank line renders as a table row."""
+    skill = (SKILL_DIR / "SKILL.md").read_text(encoding="utf-8")
+    section = skill.split("## Options", 1)[1].split("\n## ", 1)[0]
+    lines = section.splitlines()
+    last_row = max(i for i, line in enumerate(lines) if line.startswith("|"))
+    assert last_row + 1 == len(lines) or lines[last_row + 1].strip() == ""

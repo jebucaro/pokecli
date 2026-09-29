@@ -655,3 +655,36 @@ def test_encounters_unknown_game_exits_2(install_client):
     result = runner.invoke(app, ["encounters", "ralts", "--game", "rde"])
     assert result.exit_code == 2
     assert "not a known game" in strip_ansi(result.output)
+
+
+def test_can_learn_in_dlc_uses_base_game_learnset(install_client):
+    base_only = {
+        **GYARADOS,
+        "moves": [
+            {
+                "move": {"name": "blizzard", "url": "https://x/api/v2/move/59/"},
+                "version_group_details": [
+                    {
+                        "level_learned_at": 0,
+                        "move_learn_method": {"name": "machine", "url": "https://x/1/"},
+                        "version_group": {
+                            "name": "sword-shield",
+                            "url": "https://x/api/v2/version-group/20/",
+                        },
+                    }
+                ],
+            }
+        ],
+    }
+    install_client(_client(resources={"pokemon": base_only}))
+    result = runner.invoke(
+        app,
+        ["can-learn", "gyarados", "blizzard", "--game", "the-isle-of-armor-sword", "--format", "toon"],
+    )
+    assert result.exit_code == 0
+
+
+def test_moves_hint_keeps_the_game(install_client):
+    install_client(_client(resources={"pokemon": GYARADOS}))
+    result = runner.invoke(app, ["moves", "gyarados", "--game", "red", "--format", "toon"])
+    assert "pokecli can-learn gyarados <move_name> --game red" in result.output

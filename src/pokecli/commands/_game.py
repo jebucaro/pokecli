@@ -8,7 +8,7 @@ from dataclasses import dataclass
 
 import typer
 
-from pokecli.config import VERSION_GROUP_VERSIONS
+from pokecli.config import DLC_BASE_GROUP, VERSION_GROUP_VERSIONS
 
 _GROUP_OF_VERSION = {
     version: group
@@ -46,16 +46,22 @@ def validate_game(value: str | None) -> str | None:
     return name
 
 
+def _learnset_groups(group: str) -> frozenset[str]:
+    """A DLC group plus the base group that holds its learnsets."""
+    base = DLC_BASE_GROUP.get(group)
+    return frozenset({group, base}) if base else frozenset({group})
+
+
 def resolve_game(name: str) -> GameScope:
     """Scope for a validated game name."""
     if name in VERSION_GROUP_VERSIONS:
         return GameScope(
             name=name,
-            version_groups=frozenset({name}),
+            version_groups=_learnset_groups(name),
             versions=frozenset(VERSION_GROUP_VERSIONS[name]),
         )
     return GameScope(
         name=name,
-        version_groups=frozenset({_GROUP_OF_VERSION[name]}),
+        version_groups=_learnset_groups(_GROUP_OF_VERSION[name]),
         versions=frozenset({name}),
     )

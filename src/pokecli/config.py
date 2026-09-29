@@ -98,3 +98,14 @@ VERSION_GROUP_VERSIONS: dict[str, tuple[str, ...]] = {
     "mega-dimension": ("mega-dimension",),
     "champions": ("champions",),
 }
+
+#: DLC version groups and the base game they extend. PokeAPI records DLC
+#: encounters under the DLC's own versions but its learnsets under the base
+#: group, so a DLC `--game` must also search the base group's moves.
+DLC_BASE_GROUP: dict[str, str] = {
+    "the-isle-of-armor": "sword-shield",
+    "the-crown-tundra": "sword-shield",
+    "the-teal-mask": "scarlet-violet",
+    "the-indigo-disk": "scarlet-violet",
+    "mega-dimension": "legends-za",
+}

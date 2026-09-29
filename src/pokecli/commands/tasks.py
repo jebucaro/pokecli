@@ -147,7 +147,7 @@ def moves(
         _render_moves_empty(pokemon_name, method, game, fmt)
         return
 
-    hints = get_hints("moves", {"name": pokemon_name})
+    hints = get_hints("moves", {"name": pokemon_name, "game": game})
     game_field = {"game": game} if game else {}
 
     if fmt == "json":

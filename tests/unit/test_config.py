@@ -60,3 +60,10 @@ def test_version_group_versions_match_pokeapi_examples():
         "the-isle-of-armor-sword",
         "the-isle-of-armor-shield",
     )
+
+
+def test_dlc_base_groups_are_known_groups():
+    from pokecli.config import DLC_BASE_GROUP, VERSION_GROUP_VERSIONS
+
+    assert set(DLC_BASE_GROUP) <= set(VERSION_GROUP_VERSIONS)
+    assert set(DLC_BASE_GROUP.values()) <= set(VERSION_GROUP_VERSIONS)
