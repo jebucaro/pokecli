@@ -108,6 +108,7 @@ def render_pokemon_moves(
     *,
     move_filter: str | None = None,
     method_filter: str | None = None,
+    game: str | None = None,
 ) -> None:
     chars = get_chars(console)
 
@@ -121,10 +122,11 @@ def render_pokemon_moves(
         )
         return
 
+    scope = f" in {game}" if game else ""
     if method_filter is not None:
-        title = f"{name.capitalize()} {chars.dash} {method_filter} moves ({len(moves)})"
+        title = f"{name.capitalize()} {chars.dash} {method_filter} moves{scope} ({len(moves)})"
     else:
-        title = f"{name.capitalize()} {chars.dash} learnable moves ({len(moves)})"
+        title = f"{name.capitalize()} {chars.dash} learnable moves{scope} ({len(moves)})"
 
     table = Table(
         title=title,

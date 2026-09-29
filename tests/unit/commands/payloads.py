@@ -308,3 +308,43 @@ BY_RESOURCE: dict[str, dict] = {
     "pokedex": POKEDEX,
     "machine": MACHINE,
 }
+
+
+def _learn(method: str, group: str, group_id: int, level: int = 0) -> dict:
+    return {
+        "level_learned_at": level,
+        "move_learn_method": _named(method, "move-learn-method"),
+        "version_group": _named(group, "version-group", group_id),
+    }
+
+
+# The newest group (champions) teaches by `train`; older groups by machine.
+# Earthquake has no Gen I detail at all.
+GYARADOS = {
+    **POKEMON,
+    "id": 130,
+    "name": "gyarados",
+    "moves": [
+        {
+            "move": _named("blizzard", "move", 59),
+            "version_group_details": [
+                _learn("machine", "red-blue", 1),
+                _learn("train", "champions", 32),
+            ],
+        },
+        {
+            "move": _named("earthquake", "move", 89),
+            "version_group_details": [
+                _learn("machine", "ruby-sapphire", 5),
+                _learn("train", "champions", 32),
+            ],
+        },
+        {
+            "move": _named("bite", "move", 44),
+            "version_group_details": [
+                _learn("level-up", "red-blue", 1, 20),
+                _learn("level-up", "champions", 32, 1),
+            ],
+        },
+    ],
+}

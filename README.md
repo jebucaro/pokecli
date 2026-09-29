@@ -110,6 +110,7 @@ Names are case-insensitive and spaces become hyphens, so `pokecli get item "mast
 
 ```bash
 pokecli encounters pikachu
+pokecli encounters pikachu --game yellow
 pokecli get location-area trophy-garden-area
 ```
 
@@ -118,7 +119,12 @@ pokecli get location-area trophy-garden-area
 ```bash
 pokecli can-learn pikachu thunderbolt
 pokecli can-learn charizard fly --method machine
+pokecli can-learn gyarados blizzard --method machine --game red
 ```
+
+`--game` takes a single game (`red`, `sword`) or a pair (`red-blue`). Without it,
+results merge every game. DLC areas have their own names, such as
+`the-isle-of-armor-sword`.
 
 The exit code is the answer: 0 for yes, 1 for no. That makes it usable directly in a script:
 
@@ -155,10 +161,10 @@ pokecli sprite pikachu -o shiny.png --variant front_shiny
 | `get <resource> <id>` | Fetch one record |
 | `list <resource>` | Browse, paginated with `--limit` and `--offset` |
 | `search <resource> <query>` | Find names containing a substring |
-| `moves <pokemon>` | Learnable moves, `--method` to filter |
-| `can-learn <pokemon> <move>` | Learnability check, answer in the exit code |
+| `moves <pokemon>` | Learnable moves, `--method` and `--game` to filter |
+| `can-learn <pokemon> <move>` | Learnability check, answer in the exit code; `--method` and `--game` to narrow |
 | `evolution <pokemon>` | Full evolution chain |
-| `encounters <pokemon>` | Wild encounter locations |
+| `encounters <pokemon>` | Wild encounter locations, `--game` to filter |
 | `forms <pokemon>` | Species varieties |
 | `sprite <pokemon> -o <path>` | Download a sprite, `--variant` to choose |
 | `cache stats` | Cached entry counts per resource |
@@ -221,10 +227,10 @@ Every response includes `help[]` hints naming valid next commands.
 | Code | Meaning |
 |------|---------|
 | 0 | Success. For `can-learn`, also means yes |
-| 1 | Not found, unreachable API, invalid `--variant`, or `can-learn` answering no |
-| 2 | Invalid invocation (unknown command, resource, option, or `--method`), or a response that did not match the expected shape |
+| 1 | Not found, unreachable API, invalid `--variant`, no learnset data for `--game`, or `can-learn` answering no |
+| 2 | Invalid invocation (unknown command, resource, option, `--method`, or `--game`), or a response that did not match the expected shape |
 
-A mistyped `--method` exits 2, so `can-learn` never reports a typo as "no".
+A mistyped `--method` or `--game` exits 2, so `can-learn` never reports a typo as "no".
 
 ## Caching
 

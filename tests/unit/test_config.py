@@ -35,3 +35,35 @@ def test_version_group_order_is_unique_and_starts_with_gen_one():
 
     assert len(VERSION_GROUP_ORDER) == len(set(VERSION_GROUP_ORDER))
     assert VERSION_GROUP_ORDER.index("blue-japan") < VERSION_GROUP_ORDER.index("scarlet-violet")
+
+
+def test_version_group_versions_cover_exactly_the_ordered_groups():
+    from pokecli.config import VERSION_GROUP_ORDER, VERSION_GROUP_VERSIONS
+
+    assert tuple(VERSION_GROUP_VERSIONS) == VERSION_GROUP_ORDER
+
+
+def test_every_version_belongs_to_exactly_one_group():
+    from pokecli.config import VERSION_GROUP_VERSIONS
+
+    versions = [v for vs in VERSION_GROUP_VERSIONS.values() for v in vs]
+    assert len(versions) == len(set(versions))
+    assert all(VERSION_GROUP_VERSIONS.values())
+
+
+def test_version_group_versions_match_pokeapi_examples():
+    from pokecli.config import VERSION_GROUP_VERSIONS
+
+    assert VERSION_GROUP_VERSIONS["red-blue"] == ("red", "blue")
+    assert VERSION_GROUP_VERSIONS["yellow"] == ("yellow",)
+    assert VERSION_GROUP_VERSIONS["the-isle-of-armor"] == (
+        "the-isle-of-armor-sword",
+        "the-isle-of-armor-shield",
+    )
+
+
+def test_dlc_base_groups_are_known_groups():
+    from pokecli.config import DLC_BASE_GROUP, VERSION_GROUP_VERSIONS
+
+    assert set(DLC_BASE_GROUP) <= set(VERSION_GROUP_VERSIONS)
+    assert set(DLC_BASE_GROUP.values()) <= set(VERSION_GROUP_VERSIONS)

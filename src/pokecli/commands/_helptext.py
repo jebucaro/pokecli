@@ -17,6 +17,10 @@ FORMAT = "Output format: table, toon, or json. Defaults to table in a terminal, 
 LIMIT = "Number of results to show"
 OFFSET = "Number of results to skip"
 METHOD_FILTER = f"Only include this learn method: {', '.join(LEARN_METHODS)}"
+GAME_FILTER = (
+    "Only include data from this game: a version (red, sword) or "
+    "version group (red-blue, sword-shield)"
+)
 OUTPUT_PATH = "Where to save the downloaded image"
 SPRITE_VARIANT = (
     "Sprite variant: front_default, front_shiny, back_default, back_shiny, "

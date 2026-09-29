@@ -36,39 +36,27 @@ This is every option pokecli accepts, so there's no need to read help output.
 
 | Option | Accepted by | Values |
 |--------|-------------|--------|
-| `--format` | every command that returns data | omit it: you already get TOON. Only `json` is ever worth passing (see below). `toon` and `table` are overrides for humans; you never need them |
+| `--format` | every command that returns data | omit it; pass `json` only to compute over results (see below) |
 | `--no-cache` | `get`, `search`, and the six task commands | fetch fresh instead of reading the cache |
 | `--limit`, `--offset` | `list` | page size (default 20) and start index (default 0) |
 | `--method` | `moves`, `can-learn` | `level-up`, `machine`, `tutor`, `egg`, or a game-specific method: `stadium-surfing-pikachu`, `light-ball-egg`, `colosseum-purification`, `xd-shadow`, `xd-purification`, `form-change`, `zygarde-cube`, `train`. Case-insensitive. Any other value exits 2 |
+| `--game` | `moves`, `can-learn`, `encounters` | a game (`red`, `sword`) or pair (`red-blue`). DLC has its own names (`the-isle-of-armor-sword`). Any other value exits 2 and lists valid names |
 | `-o`, `--output` | `sprite` (required) | file path to write |
 | `--variant` | `sprite` | `front_default` (default), `front_shiny`, `back_default`, `back_shiny`, `front_female`, `front_shiny_female` |
 | `--resource` | `cache clear` | one resource name, to clear only that table |
-| `--skills`, `--local`, `--agent` | `install` | install this skill; `--agent` is `claude` (default, `~/.claude/skills/`) or `kiro` (`~/.kiro/skills/`, or `$KIRO_HOME/skills/`); `--local` targets the matching `./.claude/skills/` or `./.kiro/skills/` instead |
+| `--skills`, `--local`, `--agent` | `install` | installs this skill; not needed for queries |
+
+When the user names a game, pass `--game`. Without it, results merge every game
+and each move shows the newest game's method.
 
 ## Output format
 
-Do not pass `--format`. When output is piped or captured — which is always the
-case for you — pokecli emits TOON automatically. `table` is only used when a
-human is at an interactive terminal. This covers every command that returns
-data, `cache stats` and bare `pokecli` included.
+Omit `--format`. Captured output is already TOON, which is compact and readable.
+Narrow with `search`, `--method`, or `--limit` before reaching for a parser.
 
-### When to add `--format json`
-
-Almost never. Run the command with no `--format` and read the answer from the
-default output. It is already compact, and most answers are a few values you
-can read directly.
-
-Narrow with the command itself before reaching for a parser. `search`,
-`--method`, `--limit`, and a more specific resource usually shrink the output
-to something you can read.
-
-Add `--format json` only when you must compute over the result — count, sum,
-sort, or filter across more rows than you can reliably read. Do not assume a
-parser is installed:
-
-- Prefer `python3`. Do not use `python`, which is often absent.
-- Use `jq` only after confirming it exists (`command -v jq`).
-- If neither is available, drop `--format json` and read the default output.
+Add `--format json` only to count, sum, sort, or filter more rows than you can
+reliably read. Parse with `python3` (not `python`); use `jq` only after
+`command -v jq` succeeds.
 
 ```bash
 pokecli moves cubone --method level-up --format json | python3 -c 'import json,sys; d=json.load(sys.stdin); print([(m["name"], m["level"]) for m in d["moves"] if m["level"] <= 10])'
@@ -80,11 +68,9 @@ filter matches it unless you narrow with `--method level-up` first.
 
 ## The 18 resources
 
-Every `get`, `list`, and `search` takes one of these names. Pick the resource
-by its purpose. No command lists them, so use this table, not `--help`, which is
-styled terminal output and wastes tokens. If pokecli rejects a name, its error
-lists the names the installed binary accepts. Trust that list over this table,
-which may be from an older version.
+Every `get`, `list`, and `search` takes one of these names. Use this table
+rather than `--help`. If pokecli rejects a name, its error lists the accepted
+names; trust that over this table.
 
 | Resource | Purpose |
 |----------|---------|
@@ -126,14 +112,14 @@ This is what you get with no `--format` (TOON):
 | Pokedex text, egg groups, capture rate | `pokecli get pokemon-species <name>` |
 | Moves a Pokemon can learn | `pokecli moves <name>` |
 | Can this Pokemon learn move X? | `pokecli can-learn <name> <move>` |
-| Full evolution chain | `pokecli evolution <name>` |
+| Can it learn move X in game Z? | `pokecli can-learn <name> <move> --game <game>` |
+| Full evolution chain | `pokecli evolution <name>` (every branch; conditions like gender are not exposed, so don't re-query `get evolution-chain`) |
 | Where can I catch this Pokemon? | `pokecli encounters <name>` |
 | All varieties for a species | `pokecli forms <name>` |
 | Inspect one alternate form | `pokecli get pokemon-form <form-name>` |
 | Download a sprite | `pokecli sprite <name> -o <path>` |
 | Anything else about one named thing | `pokecli get <resource> <name>` |
 | I know part of the name only | `pokecli search <resource> <query>` |
-| Which resources exist? | See [The 18 resources](#the-18-resources) above |
 
 ## Examples
 
@@ -169,14 +155,15 @@ request. Numeric IDs work wherever a name does.
 | Code | Meaning |
 |------|---------|
 | 0 | Success. For `can-learn`, also means yes |
-| 1 | Not found, unreachable API, invalid `--variant`, or `can-learn` answering no |
-| 2 | Invalid invocation (unknown command, resource, option, or `--method`), or a response that did not match the expected shape |
+| 1 | Not found, unreachable API, invalid `--variant`, no learnset data for `--game`, or `can-learn` answering no |
+| 2 | Invalid invocation (unknown command, resource, option, `--method`, or `--game`), or a response that did not match the expected shape |
 
 On exit 2, read stderr. For an invalid resource it names every accepted value.
 Fix the invocation and retry; don't retry it unchanged.
 
 `can-learn` is the only command whose exit code carries an answer rather than an
-error, so branch on it directly:
+error, so branch on it directly. An exit 1 with no `can_learn:` line on stdout
+means pokecli could not answer (stderr says why), not no:
 
 ```bash
 if pokecli can-learn charizard fly; then echo "yes"; fi
