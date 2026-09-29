@@ -227,7 +227,7 @@ Every response includes `help[]` hints naming valid next commands.
 | Code | Meaning |
 |------|---------|
 | 0 | Success. For `can-learn`, also means yes |
-| 1 | Not found, unreachable API, invalid `--variant`, or `can-learn` answering no |
+| 1 | Not found, unreachable API, invalid `--variant`, no learnset data for `--game`, or `can-learn` answering no |
 | 2 | Invalid invocation (unknown command, resource, option, `--method`, or `--game`), or a response that did not match the expected shape |
 
 A mistyped `--method` or `--game` exits 2, so `can-learn` never reports a typo as "no".

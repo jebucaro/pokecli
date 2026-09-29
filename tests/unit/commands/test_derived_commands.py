@@ -688,3 +688,23 @@ def test_moves_hint_keeps_the_game(install_client):
     install_client(_client(resources={"pokemon": GYARADOS}))
     result = runner.invoke(app, ["moves", "gyarados", "--game", "red", "--format", "toon"])
     assert "pokecli can-learn gyarados <move_name> --game red" in result.output
+
+
+def test_moves_in_game_without_learnset_data_says_so(install_client):
+    """No detail at all for the game is missing data, not an empty filter."""
+    install_client(_client(resources={"pokemon": GYARADOS}))
+    result = runner.invoke(app, ["moves", "gyarados", "--game", "legends-za", "--format", "toon"])
+    assert result.exit_code == 0
+    assert "count: 0" in result.output
+    assert "No learnset data for gyarados in legends-za" in result.output
+
+
+@pytest.mark.parametrize("fmt", ["toon", "json"])
+def test_can_learn_in_game_without_learnset_data_is_an_error_not_no(fmt, install_client):
+    install_client(_client(resources={"pokemon": GYARADOS}))
+    result = runner.invoke(
+        app, ["can-learn", "gyarados", "blizzard", "--game", "legends-za", "--format", fmt]
+    )
+    assert result.exit_code == 1
+    assert "can_learn" not in result.stdout
+    assert "No learnset data for gyarados in legends-za" in strip_ansi(result.stderr)

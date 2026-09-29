@@ -121,6 +121,23 @@ def _extract_moves(
     )
 
 
+def _has_learnset_data(raw_moves: list[dict], version_groups: frozenset[str]) -> bool:
+    """Whether any move has a detail in these groups.
+
+    None means the Pokemon is absent from the game or PokeAPI has no data for
+    it yet; either way, an empty result is not an answer.
+    """
+    return any(
+        d["version_group"]["name"] in version_groups
+        for entry in raw_moves
+        for d in entry.get("version_group_details", [])
+    )
+
+
+def _no_learnset_message(pokemon_name: str, game: str) -> str:
+    return f"No learnset data for {pokemon_name} in {game}"
+
+
 def moves(
     ctx: typer.Context,
     name_or_id: str = typer.Argument(..., help=POKEMON_NAME_OR_ID),
@@ -144,7 +161,13 @@ def moves(
     pokemon_moves = _extract_moves(data.get("moves", []), method, groups)
 
     if not pokemon_moves:
-        _render_moves_empty(pokemon_name, method, game, fmt)
+        if groups is not None and not _has_learnset_data(data.get("moves", []), groups):
+            message = _no_learnset_message(pokemon_name, game)
+        else:
+            message = f"No {method} moves found" if method else "No recorded moves"
+            if game:
+                message += f" in {game}"
+        _render_moves_empty(pokemon_name, method, game, fmt, message)
         return
 
     hints = get_hints("moves", {"name": pokemon_name, "game": game})
@@ -185,12 +208,9 @@ def moves(
 
 
 def _render_moves_empty(
-    pokemon_name: str, method: str | None, game: str | None, fmt: str
+    pokemon_name: str, method: str | None, game: str | None, fmt: str, message: str
 ) -> None:
     """A Pokemon with no matching moves is a zero result, not a failure."""
-    message = f"No {method} moves found" if method else "No recorded moves"
-    if game:
-        message += f" in {game}"
     if fmt == "json":
         payload: dict = {"name": pokemon_name}
         if game:
@@ -231,6 +251,9 @@ def can_learn(
     data = fetch_resource(client, "pokemon", name_or_id, no_cache, err_console)
     pokemon_name = data["name"]
     groups = resolve_game(game).version_groups if game else None
+    if groups is not None and not _has_learnset_data(data.get("moves", []), groups):
+        err_console.print(f"[red]{_no_learnset_message(pokemon_name, game)}.[/red]")
+        raise typer.Exit(1)
     pokemon_moves = _extract_moves(data.get("moves", []), method, groups)
 
     target = move_name.strip().lower().replace(" ", "-")

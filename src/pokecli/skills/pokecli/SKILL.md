@@ -155,14 +155,15 @@ request. Numeric IDs work wherever a name does.
 | Code | Meaning |
 |------|---------|
 | 0 | Success. For `can-learn`, also means yes |
-| 1 | Not found, unreachable API, invalid `--variant`, or `can-learn` answering no |
+| 1 | Not found, unreachable API, invalid `--variant`, no learnset data for `--game`, or `can-learn` answering no |
 | 2 | Invalid invocation (unknown command, resource, option, `--method`, or `--game`), or a response that did not match the expected shape |
 
 On exit 2, read stderr. For an invalid resource it names every accepted value.
 Fix the invocation and retry; don't retry it unchanged.
 
 `can-learn` is the only command whose exit code carries an answer rather than an
-error, so branch on it directly:
+error, so branch on it directly. An exit 1 with no `can_learn:` line on stdout
+means pokecli could not answer (stderr says why), not no:
 
 ```bash
 if pokecli can-learn charizard fly; then echo "yes"; fi
