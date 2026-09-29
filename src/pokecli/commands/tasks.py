@@ -337,12 +337,27 @@ def evolution(
     _emit_hints(hints, fmt)
 
 
+def _filter_encounters(encounters: list[dict], versions: frozenset[str]) -> list[dict]:
+    """Keep only these versions' details, dropping areas left with none."""
+    kept = []
+    for enc in encounters:
+        details = [
+            vd for vd in enc.get("version_details", []) if vd["version"]["name"] in versions
+        ]
+        if details:
+            kept.append({**enc, "version_details": details})
+    return kept
+
+
 def encounters(
     ctx: typer.Context,
     name_or_id: str = typer.Argument(..., help=POKEMON_NAME_OR_ID),
     no_cache: bool = typer.Option(False, "--no-cache", help=NO_CACHE),
     format: str = typer.Option(
         None, "--format", help=FORMAT, callback=validate_format
+    ),
+    game: Optional[str] = typer.Option(
+        None, "--game", help=GAME_FILTER, callback=validate_game
     ),
 ) -> None:
     """Show where a Pokemon appears in the wild."""
@@ -355,24 +370,33 @@ def encounters(
         lambda: client.get_subresource("pokemon", pokemon_name, "encounters"),
         err_console,
     )
+    if game:
+        result = _filter_encounters(result, resolve_game(game).versions)
 
     first_area = result[0]["location_area"]["name"] if result else None
     hints = get_hints(
         "encounters", {"name": pokemon_name, "first_area": first_area}
     )
+    game_field = {"game": game} if game else {}
 
     if fmt == "json":
-        render_json({"pokemon": pokemon_name, "encounters": result}, console)
+        render_json(
+            {"pokemon": pokemon_name, **game_field, "encounters": result}, console
+        )
         return
 
     if fmt == "toon":
         if not result:
+            message = "No recorded encounter locations"
+            if game:
+                message += f" in {game}"
             print_toon(
                 toons.dumps(
                     {
                         "pokemon": pokemon_name,
+                        **game_field,
                         "areas": 0,
-                        "result": "No recorded encounter locations",
+                        "result": message,
                     }
                 )
             )
@@ -381,13 +405,14 @@ def encounters(
                 toons.dumps(
                     {
                         "pokemon": pokemon_name,
+                        **game_field,
                         "areas": len(result),
                         "encounters": encounters_toon(pokemon_name, result),
                     }
                 )
             )
     else:
-        render_encounters(pokemon_name, result, console)
+        render_encounters(pokemon_name, result, console, game=game)
 
     _emit_hints(hints, fmt)
 

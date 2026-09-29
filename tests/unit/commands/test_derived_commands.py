@@ -566,3 +566,92 @@ def test_unknown_game_exits_2(args, install_client):
     result = runner.invoke(app, args)
     assert result.exit_code == 2
     assert "not a known game" in strip_ansi(result.output)
+
+
+def _encounter(area: str, version: str) -> dict:
+    return {
+        "location_area": {"name": area, "url": "https://x/1/"},
+        "version_details": [
+            {
+                "version": {"name": version, "url": "https://x/1/"},
+                "max_chance": 4,
+                "encounter_details": [
+                    {
+                        "min_level": 4,
+                        "max_level": 4,
+                        "chance": 4,
+                        "method": {"name": "walk", "url": "https://x/1/"},
+                        "condition_values": [],
+                    }
+                ],
+            }
+        ],
+    }
+
+
+MULTI_GAME_ENCOUNTERS = [
+    _encounter("hoenn-route-102-area", "ruby"),
+    _encounter("sinnoh-route-203-area", "diamond"),
+    _encounter("rolling-fields-area", "sword"),
+    _encounter("fields-of-honor-area", "the-isle-of-armor-sword"),
+]
+
+
+def _multi_client():
+    return _client(subresources={"encounters": MULTI_GAME_ENCOUNTERS})
+
+
+def test_encounters_in_game_keeps_only_that_version(install_client):
+    install_client(_multi_client())
+    result = runner.invoke(app, ["encounters", "ralts", "--game", "ruby", "--format", "toon"])
+    assert result.exit_code == 0
+    assert "game: ruby" in result.output
+    assert "areas: 1" in result.output
+    assert "hoenn-route-102-area" in result.output
+    assert "sinnoh-route-203-area" not in result.output
+
+
+def test_encounters_in_group_keeps_its_versions(install_client):
+    install_client(_multi_client())
+    result = runner.invoke(
+        app, ["encounters", "ralts", "--game", "ruby-sapphire", "--format", "json"]
+    )
+    data = json.loads(result.output)
+    assert data["game"] == "ruby-sapphire"
+    assert [e["location_area"]["name"] for e in data["encounters"]] == ["hoenn-route-102-area"]
+
+
+def test_encounters_sword_excludes_dlc_versions(install_client):
+    install_client(_multi_client())
+    result = runner.invoke(app, ["encounters", "ralts", "--game", "sword", "--format", "toon"])
+    assert "rolling-fields-area" in result.output
+    assert "fields-of-honor-area" not in result.output
+
+
+def test_encounters_empty_in_game_names_the_game(install_client):
+    install_client(_multi_client())
+    result = runner.invoke(app, ["encounters", "ralts", "--game", "red", "--format", "toon"])
+    assert result.exit_code == 0
+    assert "areas: 0" in result.output
+    assert "No recorded encounter locations in red" in result.output
+
+
+def test_encounters_without_game_is_unchanged(install_client):
+    install_client(_multi_client())
+    result = runner.invoke(app, ["encounters", "ralts", "--format", "toon"])
+    assert "areas: 4" in result.output
+    assert "game:" not in result.output
+
+
+@pytest.mark.parametrize("fmt", ["table", "toon", "json"])
+def test_encounters_with_game_supports_every_format(fmt, install_client):
+    install_client(_multi_client())
+    result = runner.invoke(app, ["encounters", "ralts", "--game", "ruby", "--format", fmt])
+    assert result.exit_code == 0
+
+
+def test_encounters_unknown_game_exits_2(install_client):
+    install_client(_multi_client())
+    result = runner.invoke(app, ["encounters", "ralts", "--game", "rde"])
+    assert result.exit_code == 2
+    assert "not a known game" in strip_ansi(result.output)

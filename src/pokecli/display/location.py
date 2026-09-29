@@ -96,13 +96,18 @@ def render_location_area(area: LocationArea, console: Console) -> None:
     console.print(enc_table)
 
 
-def render_encounters(pokemon_name: str, encounters: list, console: Console) -> None:
+def render_encounters(
+    pokemon_name: str, encounters: list, console: Console, game: str | None = None
+) -> None:
     """Render `/pokemon/{id}/encounters/` response (list of dicts)."""
     title = format_name(pokemon_name)
-    console.print(Panel(f"[bold]{title} - Encounter Locations[/bold]", expand=False))
+    scope = f" in {game}" if game else ""
+    console.print(
+        Panel(f"[bold]{title} - Encounter Locations{scope}[/bold]", expand=False)
+    )
 
     if not encounters:
-        console.print("[dim]No recorded encounter locations.[/dim]")
+        console.print(f"[dim]No recorded encounter locations{scope}.[/dim]")
         return
 
     table = Table(show_lines=False)
