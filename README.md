@@ -163,7 +163,7 @@ pokecli sprite pikachu -o shiny.png --variant front_shiny
 | `sprite <pokemon> -o <path>` | Download a sprite, `--variant` to choose |
 | `cache stats` | Cached entry counts per resource |
 | `cache clear` | Clear the cache, `--resource` to narrow |
-| `install --skills` | Install the packaged agent skill files |
+| `install --skills` | Install the packaged agent skill files, `--agent` for `claude` or `kiro`, `--local` for the workspace |
 
 ## Output Formats
 
@@ -243,10 +243,22 @@ pokecli cache clear --resource pokemon
 
 - `pokecli get <resource> <id>` covers every resource. There is no second way.
 - Do not pass `--format`. Piped output is already TOON.
-- Use `--format json` only when piping to `jq` or another parser.
+- Use `--format json` only when a result must be filtered or calculated, not just read. Prefer `python3` as the parser, and use `jq` only after confirming it is installed.
 - The resource vocabulary, each name with its purpose, is in the installed skill. Read it there rather than calling `--help`, which is styled terminal output and wastes tokens. Re-run `pokecli install --skills` after upgrading so the installed copy matches the binary.
 - Branch on `can-learn`'s exit code instead of parsing its output.
-- `pokecli install --skills` installs the packaged skill and references.
+- `pokecli install --skills` installs the packaged skill and references for Claude Code. Use `pokecli install --skills --agent kiro` for Kiro. Add `--local` to install into the current project instead of the home directory:
+
+| Agent | Global (default) | Workspace (`--local`) |
+|-------|------------------|-----------------------|
+| `claude` (default) | `~/.claude/skills/pokecli/` | `.claude/skills/pokecli/` |
+| `kiro` | `~/.kiro/skills/pokecli/`, or `$KIRO_HOME/skills/pokecli/` | `.kiro/skills/pokecli/` |
+
+```bash
+pokecli install --skills --agent kiro          # all your projects
+pokecli install --skills --agent kiro --local  # this project only
+```
+
+The Kiro copy keeps only the `name` and `description` frontmatter fields, since those are the ones Kiro documents.
 
 ## Breaking Changes in 0.2.0
 

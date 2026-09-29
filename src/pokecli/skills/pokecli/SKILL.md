@@ -36,14 +36,14 @@ This is every option pokecli accepts, so there's no need to read help output.
 
 | Option | Accepted by | Values |
 |--------|-------------|--------|
-| `--format` | every command that returns data | `toon` (default when piped), `json`, `table` |
+| `--format` | every command that returns data | omit it: you already get TOON. Only `json` is ever worth passing (see below). `toon` and `table` are overrides for humans; you never need them |
 | `--no-cache` | `get`, `search`, and the six task commands | fetch fresh instead of reading the cache |
 | `--limit`, `--offset` | `list` | page size (default 20) and start index (default 0) |
 | `--method` | `moves`, `can-learn` | `level-up`, `machine`, `tutor`, `egg`, or a game-specific method: `stadium-surfing-pikachu`, `light-ball-egg`, `colosseum-purification`, `xd-shadow`, `xd-purification`, `form-change`, `zygarde-cube`, `train`. Case-insensitive. Any other value exits 2 |
 | `-o`, `--output` | `sprite` (required) | file path to write |
 | `--variant` | `sprite` | `front_default` (default), `front_shiny`, `back_default`, `back_shiny`, `front_female`, `front_shiny_female` |
 | `--resource` | `cache clear` | one resource name, to clear only that table |
-| `--skills`, `--local` | `install` | install this skill; `--local` targets `./.claude/skills/` instead of `~` |
+| `--skills`, `--local`, `--agent` | `install` | install this skill; `--agent` is `claude` (default, `~/.claude/skills/`) or `kiro` (`~/.kiro/skills/`, or `$KIRO_HOME/skills/`); `--local` targets the matching `./.claude/skills/` or `./.kiro/skills/` instead |
 
 ## Output format
 
@@ -52,7 +52,31 @@ case for you — pokecli emits TOON automatically. `table` is only used when a
 human is at an interactive terminal. This covers every command that returns
 data, `cache stats` and bare `pokecli` included.
 
-Pass `--format json` only when the next step is `jq` or another parser.
+### When to add `--format json`
+
+Almost never. Run the command with no `--format` and read the answer from the
+default output. It is already compact, and most answers are a few values you
+can read directly.
+
+Narrow with the command itself before reaching for a parser. `search`,
+`--method`, `--limit`, and a more specific resource usually shrink the output
+to something you can read.
+
+Add `--format json` only when you must compute over the result — count, sum,
+sort, or filter across more rows than you can reliably read. Do not assume a
+parser is installed:
+
+- Prefer `python3`. Do not use `python`, which is often absent.
+- Use `jq` only after confirming it exists (`command -v jq`).
+- If neither is available, drop `--format json` and read the default output.
+
+```bash
+pokecli moves cubone --method level-up --format json | python3 -c 'import json,sys; d=json.load(sys.stdin); print([(m["name"], m["level"]) for m in d["moves"] if m["level"] <= 10])'
+```
+
+Before filtering on a field, check what it holds on rows it doesn't apply to.
+For example, a move not learned by level-up has `level: 0`, so a `level <= 10`
+filter matches it unless you narrow with `--method level-up` first.
 
 ## The 18 resources
 
@@ -83,7 +107,9 @@ which may be from an older version.
 | `pokedex` | A regional or national pokedex and its species entries |
 | `machine` | A TM or HM record - which move it teaches, in which games |
 
-## TOON output format
+## Reading the default output
+
+This is what you get with no `--format` (TOON):
 
 - A single record is `label:` followed by indented `key: value` pairs
 - A collection is `label[count]{fields}:` followed by indented rows

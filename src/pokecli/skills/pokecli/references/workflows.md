@@ -3,7 +3,10 @@
 Recipes for questions that span more than one command.
 
 Output is TOON automatically when piped, so none of these pass `--format`.
-`--format json` appears only where the next step is `jq`.
+Answer from the default output first. The "Shell scripting variant" blocks are
+for scripts that need a parser. They use `jq`, so confirm it exists
+(`command -v jq`) before running one, and otherwise read the default output or
+use `python3` as shown in SKILL.md.
 
 ## Where can I catch Pokemon X?
 
