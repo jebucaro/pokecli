@@ -12,6 +12,7 @@ use `python3` as shown in SKILL.md.
 
 ```bash
 pokecli encounters pikachu
+pokecli encounters pikachu --game yellow
 ```
 
 Then inspect one area in detail:
@@ -106,7 +107,7 @@ answer the question they probably meant instead — whether the Pokemon can lear
 it by machine:
 
 ```bash
-pokecli can-learn charizard thunderbolt --method machine
+pokecli can-learn charizard thunderbolt --method machine --game red
 ```
 
 To explore what machines exist at all:

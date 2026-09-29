@@ -45,6 +45,8 @@ This is every option pokecli accepts, so there's no need to read help output.
 | `--variant` | `sprite` | `front_default` (default), `front_shiny`, `back_default`, `back_shiny`, `front_female`, `front_shiny_female` |
 | `--resource` | `cache clear` | one resource name, to clear only that table |
 | `--skills`, `--local`, `--agent` | `install` | installs this skill; not needed for queries |
+When the user names a game, pass `--game`. Without it, results merge every game
+and each move shows the newest game's method.
 
 ## Output format
 
@@ -109,7 +111,8 @@ This is what you get with no `--format` (TOON):
 | Pokedex text, egg groups, capture rate | `pokecli get pokemon-species <name>` |
 | Moves a Pokemon can learn | `pokecli moves <name>` |
 | Can this Pokemon learn move X? | `pokecli can-learn <name> <move>` |
-| Full evolution chain | `pokecli evolution <name>` |
+| Can it learn move X in game Z? | `pokecli can-learn <name> <move> --game <game>` |
+| Full evolution chain | `pokecli evolution <name>` (every branch; conditions like gender are not exposed, so don't re-query `get evolution-chain`) |
 | Where can I catch this Pokemon? | `pokecli encounters <name>` |
 | All varieties for a species | `pokecli forms <name>` |
 | Inspect one alternate form | `pokecli get pokemon-form <form-name>` |
@@ -152,7 +155,7 @@ request. Numeric IDs work wherever a name does.
 |------|---------|
 | 0 | Success. For `can-learn`, also means yes |
 | 1 | Not found, unreachable API, invalid `--variant`, or `can-learn` answering no |
-| 2 | Invalid invocation (unknown command, resource, option, or `--method`), or a response that did not match the expected shape |
+| 2 | Invalid invocation (unknown command, resource, option, `--method`, or `--game`), or a response that did not match the expected shape |
 
 On exit 2, read stderr. For an invalid resource it names every accepted value.
 Fix the invocation and retry; don't retry it unchanged.

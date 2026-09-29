@@ -26,10 +26,11 @@ Returned by `pokecli moves <name_or_id>`.
 |-------|-------------|
 | `name` | Move name (hyphen-separated, e.g. `flamethrower`) |
 | `learn_method` | How the move is learned: `level-up`, `machine`, `tutor`, `egg`, or occasionally another upstream PokeAPI value such as `train` (a training-menu method used by newer games) |
-| `level` | Level at which the move is learned (level-up only; `0` for all others) |
+| `level` | Level at which the move is learned (level-up only; for other methods `0` in JSON, `null` in the default output) |
 
-Results are deduplicated across all game versions. Each move appears once,
-with the learn method taken from the most recent game version that includes it.
+Each move appears once. Its method and level come from the most recent game
+that matches `--game` and `--method`; with neither, from the most recent game
+that lists the move.
 Sorted: level-up moves first (by level), then machine/tutor/egg alphabetically.
 An unfamiliar method value is not a bug — PokeAPI adds new methods over time and pokecli
 passes them through unmodified. None of them, including `machine`, carry a TM/machine ID;
