@@ -17,6 +17,7 @@ from .payloads import (
     BY_RESOURCE,
     EVOLUTION_CHAIN,
     EVOLUTION_CHAIN_SINGLE,
+    GYARADOS,
     LOCATION_AREA,
     POKEMON,
     POKEMON_NO_MOVES,
@@ -434,3 +435,134 @@ def test_unknown_version_group_is_treated_as_newest():
         ]
     )
     assert moves[0].learn_method == "tutor"
+
+
+# --------------------------------------------------------------------------
+# --game and method matching across games
+# --------------------------------------------------------------------------
+
+
+def test_extract_moves_matches_older_method_when_newest_differs():
+    from pokecli.commands.tasks import _extract_moves
+
+    moves = _extract_moves(GYARADOS["moves"], method="machine")
+    assert {m.name for m in moves} == {"blizzard", "earthquake"}
+    assert all(m.learn_method == "machine" for m in moves)
+
+
+def test_extract_moves_without_filters_keeps_newest_detail():
+    from pokecli.commands.tasks import _extract_moves
+
+    by_name = {m.name: m for m in _extract_moves(GYARADOS["moves"])}
+    assert by_name["blizzard"].learn_method == "train"
+    assert by_name["bite"].level == 1
+
+
+def test_extract_moves_limits_to_version_groups():
+    from pokecli.commands.tasks import _extract_moves
+
+    moves = _extract_moves(GYARADOS["moves"], version_groups=frozenset({"red-blue"}))
+    by_name = {m.name: m for m in moves}
+    assert set(by_name) == {"blizzard", "bite"}
+    assert by_name["bite"].level == 20
+
+
+def test_can_learn_by_machine_matches_an_older_game(install_client):
+    install_client(_client(resources={"pokemon": GYARADOS}))
+    result = runner.invoke(
+        app, ["can-learn", "gyarados", "blizzard", "--method", "machine", "--format", "toon"]
+    )
+    assert result.exit_code == 0
+    assert "method: machine" in result.output
+
+
+@pytest.mark.parametrize("game", ["red", "red-blue", "Red Blue"])
+def test_can_learn_in_game_accepts_version_or_group(game, install_client):
+    install_client(_client(resources={"pokemon": GYARADOS}))
+    result = runner.invoke(
+        app,
+        ["can-learn", "gyarados", "blizzard", "--method", "machine", "--game", game, "--format", "toon"],
+    )
+    assert result.exit_code == 0
+    assert "game: " in result.output
+
+
+def test_can_learn_answers_no_when_game_lacks_the_move(install_client):
+    install_client(_client(resources={"pokemon": GYARADOS}))
+    result = runner.invoke(
+        app,
+        ["can-learn", "gyarados", "earthquake", "--method", "machine", "--game", "red", "--format", "toon"],
+    )
+    assert result.exit_code == 1
+    assert "can_learn: false" in result.output
+    assert "game: red" in result.output
+
+
+def test_moves_in_game_echoes_game_and_filters(install_client):
+    install_client(_client(resources={"pokemon": GYARADOS}))
+    result = runner.invoke(app, ["moves", "gyarados", "--game", "red", "--format", "toon"])
+    assert result.exit_code == 0
+    assert "game: red" in result.output
+    assert "count: 2" in result.output
+    assert "earthquake" not in result.output
+
+
+def test_moves_normalizes_game_in_output(install_client):
+    install_client(_client(resources={"pokemon": GYARADOS}))
+    result = runner.invoke(app, ["moves", "gyarados", "--game", "Red Blue", "--format", "toon"])
+    assert "game: red-blue" in result.output
+
+
+def test_moves_empty_in_game_names_the_game(install_client):
+    install_client(_client(resources={"pokemon": GYARADOS}))
+    result = runner.invoke(
+        app,
+        ["moves", "gyarados", "--method", "egg", "--game", "red", "--format", "toon"],
+    )
+    assert result.exit_code == 0
+    assert "count: 0" in result.output
+    assert "No egg moves found in red" in result.output
+
+
+def test_moves_empty_in_game_json_carries_game_and_zero(install_client):
+    install_client(_client(resources={"pokemon": GYARADOS}))
+    result = runner.invoke(
+        app,
+        ["moves", "gyarados", "--method", "egg", "--game", "red", "--format", "json"],
+    )
+    data = json.loads(result.output)
+    assert data["game"] == "red"
+    assert data["count"] == 0
+    assert data["moves"] == []
+
+
+def test_moves_json_in_game_carries_game(install_client):
+    install_client(_client(resources={"pokemon": GYARADOS}))
+    result = runner.invoke(app, ["moves", "gyarados", "--game", "red", "--format", "json"])
+    data = json.loads(result.output)
+    assert data["game"] == "red"
+    assert {m["name"] for m in data["moves"]} == {"blizzard", "bite"}
+
+
+@pytest.mark.parametrize("fmt", ["table", "toon", "json"])
+def test_moves_and_can_learn_with_game_support_every_format(fmt, install_client):
+    install_client(_client(resources={"pokemon": GYARADOS}))
+    assert runner.invoke(app, ["moves", "gyarados", "--game", "red", "--format", fmt]).exit_code == 0
+    assert (
+        runner.invoke(app, ["can-learn", "gyarados", "bite", "--game", "red", "--format", fmt]).exit_code
+        == 0
+    )
+
+
+@pytest.mark.parametrize(
+    "args",
+    [
+        ["moves", "gyarados", "--game", "rde"],
+        ["can-learn", "gyarados", "blizzard", "--game", "rde"],
+    ],
+)
+def test_unknown_game_exits_2(args, install_client):
+    install_client(_client(resources={"pokemon": GYARADOS}))
+    result = runner.invoke(app, args)
+    assert result.exit_code == 2
+    assert "not a known game" in strip_ansi(result.output)

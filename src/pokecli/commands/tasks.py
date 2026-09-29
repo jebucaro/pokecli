@@ -15,8 +15,10 @@ from rich.console import Console
 
 from pokecli.cache.store import CacheStore
 from pokecli.commands._format import resolve_format, validate_format
+from pokecli.commands._game import resolve_game, validate_game
 from pokecli.commands._helptext import (
     FORMAT,
+    GAME_FILTER,
     METHOD_FILTER,
     MOVE_NAME,
     NO_CACHE,
@@ -86,12 +88,26 @@ def _version_group_recency(detail: dict) -> tuple[int, int]:
     return (_VERSION_GROUP_RANK.get(group["name"], len(VERSION_GROUP_ORDER)), group_id)
 
 
-def _extract_moves(raw_moves: list[dict]) -> list[PokemonMoveEntry]:
-    """Deduplicate moves across all versions, keeping the most recent learn method."""
+def _extract_moves(
+    raw_moves: list[dict],
+    method: str | None = None,
+    version_groups: frozenset[str] | None = None,
+) -> list[PokemonMoveEntry]:
+    """One entry per move: the newest version-group detail that passes the filters.
+
+    Filtering comes before picking the newest, so a move taught by machine in
+    red-blue still matches ``--method machine`` when the newest game lists it
+    under another method.
+    """
     seen: dict[str, PokemonMoveEntry] = {}
     for entry in raw_moves:
         move_name = entry["move"]["name"]
-        details = entry.get("version_group_details", [])
+        details = [
+            d
+            for d in entry.get("version_group_details", [])
+            if (version_groups is None or d["version_group"]["name"] in version_groups)
+            and (method is None or d["move_learn_method"]["name"] == method)
+        ]
         if not details:
             continue
         best = max(details, key=_version_group_recency)
@@ -115,26 +131,32 @@ def moves(
     method: Optional[str] = typer.Option(
         None, "--method", help=METHOD_FILTER, callback=validate_method
     ),
+    game: Optional[str] = typer.Option(
+        None, "--game", help=GAME_FILTER, callback=validate_game
+    ),
 ) -> None:
     """Show the moves a Pokemon can learn."""
     fmt = resolve_format(format)
     client = ctx.obj["client"]
     data = fetch_resource(client, "pokemon", name_or_id, no_cache, err_console)
     pokemon_name = data["name"]
-    pokemon_moves = _extract_moves(data.get("moves", []))
-
-    if method is not None:
-        pokemon_moves = [m for m in pokemon_moves if m.learn_method == method]
+    groups = resolve_game(game).version_groups if game else None
+    pokemon_moves = _extract_moves(data.get("moves", []), method, groups)
 
     if not pokemon_moves:
-        _render_moves_empty(pokemon_name, method, fmt)
+        _render_moves_empty(pokemon_name, method, game, fmt)
         return
 
     hints = get_hints("moves", {"name": pokemon_name})
+    game_field = {"game": game} if game else {}
 
     if fmt == "json":
         render_json(
-            {"name": pokemon_name, "moves": [m.model_dump() for m in pokemon_moves]},
+            {
+                "name": pokemon_name,
+                **game_field,
+                "moves": [m.model_dump() for m in pokemon_moves],
+            },
             console,
         )
         return
@@ -147,6 +169,7 @@ def moves(
             toons.dumps(
                 {
                     "pokemon": pokemon_name,
+                    **game_field,
                     "count": len(pokemon_moves),
                     "methods": methods_str,
                     "moves": rows,
@@ -154,30 +177,37 @@ def moves(
             )
         )
     else:
-        render_pokemon_moves(pokemon_name, pokemon_moves, console, method_filter=method)
+        render_pokemon_moves(
+            pokemon_name, pokemon_moves, console, method_filter=method, game=game
+        )
 
     _emit_hints(hints, fmt)
 
 
-def _render_moves_empty(pokemon_name: str, method: str | None, fmt: str) -> None:
+def _render_moves_empty(
+    pokemon_name: str, method: str | None, game: str | None, fmt: str
+) -> None:
     """A Pokemon with no matching moves is a zero result, not a failure."""
+    message = f"No {method} moves found" if method else "No recorded moves"
+    if game:
+        message += f" in {game}"
     if fmt == "json":
-        render_json({"name": pokemon_name, "moves": [], "count": 0}, console)
+        payload: dict = {"name": pokemon_name}
+        if game:
+            payload["game"] = game
+        render_json({**payload, "moves": [], "count": 0}, console)
         return
     if fmt == "toon":
-        payload: dict = {"pokemon": pokemon_name}
+        payload = {"pokemon": pokemon_name}
+        if game:
+            payload["game"] = game
         if method is not None:
             payload["method"] = method
         payload["count"] = 0
-        payload["result"] = (
-            f"No {method} moves found" if method else "No recorded moves"
-        )
+        payload["result"] = message
         print_toon(toons.dumps(payload))
         return
-    if method is not None:
-        console.print(f"[dim]{pokemon_name} has no {method} moves.[/dim]")
-    else:
-        console.print(f"[dim]{pokemon_name} has no recorded moves.[/dim]")
+    console.print(f"[dim]{pokemon_name}: {message}.[/dim]")
 
 
 def can_learn(
@@ -191,25 +221,27 @@ def can_learn(
     method: Optional[str] = typer.Option(
         None, "--method", help=METHOD_FILTER, callback=validate_method
     ),
+    game: Optional[str] = typer.Option(
+        None, "--game", help=GAME_FILTER, callback=validate_game
+    ),
 ) -> None:
     """Check whether a Pokemon can learn a move. Exit code carries the answer."""
     fmt = resolve_format(format)
     client = ctx.obj["client"]
     data = fetch_resource(client, "pokemon", name_or_id, no_cache, err_console)
     pokemon_name = data["name"]
-    pokemon_moves = _extract_moves(data.get("moves", []))
+    groups = resolve_game(game).version_groups if game else None
+    pokemon_moves = _extract_moves(data.get("moves", []), method, groups)
 
     target = move_name.strip().lower().replace(" ", "-")
     matched = [m for m in pokemon_moves if m.name == target]
-    if method is not None:
-        matched = [m for m in matched if m.learn_method == method]
+    base = {"pokemon": pokemon_name, **({"game": game} if game else {}), "move": target}
 
     if fmt == "json":
         if matched:
             render_json(
                 {
-                    "pokemon": pokemon_name,
-                    "move": target,
+                    **base,
                     "can_learn": True,
                     "method": matched[0].learn_method,
                     "level": matched[0].level,
@@ -218,7 +250,7 @@ def can_learn(
             )
         else:
             render_json(
-                {"pokemon": pokemon_name, "move": target, "can_learn": False},
+                {**base, "can_learn": False},
                 console,
             )
     elif fmt == "toon":
@@ -226,8 +258,7 @@ def can_learn(
             print_toon(
                 toons.dumps(
                     {
-                        "pokemon": pokemon_name,
-                        "move": target,
+                        **base,
                         "can_learn": True,
                         "method": matched[0].learn_method,
                         "level": matched[0].level if matched[0].level > 0 else None,
@@ -238,8 +269,7 @@ def can_learn(
             print_toon(
                 toons.dumps(
                     {
-                        "pokemon": pokemon_name,
-                        "move": target,
+                        **base,
                         "can_learn": False,
                     }
                 )
@@ -249,6 +279,8 @@ def can_learn(
             render_pokemon_moves(pokemon_name, matched, console, move_filter=target)
         else:
             suffix = f" via {method}" if method else ""
+            if game:
+                suffix += f" in {game}"
             err_console.print(
                 f"[yellow]{pokemon_name.capitalize()} cannot learn "
                 f"{target}{suffix}.[/yellow]"

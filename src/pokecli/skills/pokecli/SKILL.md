@@ -40,6 +40,7 @@ This is every option pokecli accepts, so there's no need to read help output.
 | `--no-cache` | `get`, `search`, and the six task commands | fetch fresh instead of reading the cache |
 | `--limit`, `--offset` | `list` | page size (default 20) and start index (default 0) |
 | `--method` | `moves`, `can-learn` | `level-up`, `machine`, `tutor`, `egg`, or a game-specific method: `stadium-surfing-pikachu`, `light-ball-egg`, `colosseum-purification`, `xd-shadow`, `xd-purification`, `form-change`, `zygarde-cube`, `train`. Case-insensitive. Any other value exits 2 |
+| `--game` | `moves`, `can-learn`, `encounters` | a game (`red`, `sword`) or pair (`red-blue`). DLC has its own names (`the-isle-of-armor-sword`). Any other value exits 2 and lists valid names |
 | `-o`, `--output` | `sprite` (required) | file path to write |
 | `--variant` | `sprite` | `front_default` (default), `front_shiny`, `back_default`, `back_shiny`, `front_female`, `front_shiny_female` |
 | `--resource` | `cache clear` | one resource name, to clear only that table |
