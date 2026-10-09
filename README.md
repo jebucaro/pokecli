@@ -245,6 +245,8 @@ pokecli cache clear --resource pokemon
 
 `search` caches a name index per resource, so the first search costs one request and later searches on that resource cost none.
 
+If the cache file ever gets corrupted, pokecli backs it up to `cache.json.corrupt-<timestamp>`, warns on stderr, and starts fresh, so a bad cache never blocks a command. Writes are atomic, which keeps a crash or two commands running at once from corrupting it in the first place.
+
 ## Notes For Agents
 
 - `pokecli get <resource> <id>` covers every resource. There is no second way.

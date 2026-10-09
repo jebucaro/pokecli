@@ -107,3 +107,27 @@ class TestContextManager:
         # After close, TinyDB operations should raise
         with pytest.raises((OSError, ValueError, TypeError)):
             store.get("pokemon", "pikachu")
+
+
+class TestCorruptCacheRecovery:
+    def _corrupt(self, tmp_path):
+        path = tmp_path / "cache.json"
+        path.write_text('{"pokemon": {"1": {"key": "pikachu"}}}extra')
+        return path
+
+    def test_clear_recovers_from_corrupt_file(self, tmp_path):
+        self._corrupt(tmp_path)
+        with CacheStore(db_path=str(tmp_path / "cache.json")) as cache:
+            assert cache.clear() == 0
+        assert len(list(tmp_path.glob("cache.json.corrupt-*"))) == 1
+
+    def test_stats_recovers_from_corrupt_file(self, tmp_path):
+        self._corrupt(tmp_path)
+        with CacheStore(db_path=str(tmp_path / "cache.json")) as cache:
+            stats = cache.stats()
+        assert all(v == 0 for v in stats.values())
+
+    def test_get_recovers_from_corrupt_file(self, tmp_path):
+        self._corrupt(tmp_path)
+        with CacheStore(db_path=str(tmp_path / "cache.json")) as cache:
+            assert cache.get("pokemon", "pikachu") is None

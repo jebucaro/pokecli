@@ -165,3 +165,35 @@ def test_cache_resource_completion_filters_on_prefix():
         "pokemon-species",
         "pokemon-form",
     }
+
+
+# --------------------------------------------------------------------------
+# corrupt cache recovery
+# --------------------------------------------------------------------------
+
+
+def test_clear_recovers_from_a_corrupt_cache(install_client, isolated_cache):
+    install_client(StubClient())
+    with open(isolated_cache, "w") as f:
+        f.write('{"pokemon": {"1": {"key": "pikachu"}}}trailing')
+    result = runner.invoke(app, ["cache", "clear"])
+    assert result.exit_code == 0
+    assert "Cleared" in strip_ansi(result.output)
+
+
+def test_stats_recovers_from_a_corrupt_cache(install_client, isolated_cache):
+    install_client(StubClient())
+    with open(isolated_cache, "w") as f:
+        f.write("{}garbage")
+    result = runner.invoke(app, ["cache", "stats"])
+    assert result.exit_code == 0
+    assert "total: 0" in result.output
+
+
+def test_home_view_recovers_from_a_corrupt_cache(install_client, isolated_cache):
+    install_client(StubClient())
+    with open(isolated_cache, "w") as f:
+        f.write("not json at all")
+    result = runner.invoke(app, [])
+    assert result.exit_code == 0
+    assert "quick_start" in result.output

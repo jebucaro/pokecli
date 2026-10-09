@@ -72,7 +72,7 @@ def _cache_counts() -> dict[str, int] | None:
     try:
         with CacheStore() as cache_store:
             return cache_store.stats()
-    except Exception:
+    except OSError:
         return None
 
 

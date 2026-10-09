@@ -2,6 +2,7 @@ from pathlib import Path
 
 from tinydb import Query, TinyDB
 
+from pokecli.cache.storage import ResilientJSONStorage
 from pokecli.config import CACHE_DB_PATH
 
 RESOURCE_TABLES = [
@@ -30,7 +31,7 @@ class CacheStore:
     def __init__(self, db_path: str = CACHE_DB_PATH):
         path = Path(db_path).expanduser()
         path.parent.mkdir(parents=True, exist_ok=True)
-        self._db = TinyDB(path)
+        self._db = TinyDB(path, storage=ResilientJSONStorage)
 
     def _table(self, resource: str):
         return self._db.table(resource)
