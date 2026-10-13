@@ -53,9 +53,11 @@ class TestToonsList:
         assert "  thunderbolt,machine,0" in result
         assert "  thunder,level-up,42" in result
 
-    def test_empty_list_renders_zero_header(self):
+    def test_empty_list_renders_inline_empty(self):
+        # toons >= 0.8 renders an empty list inline as `label: []`
+        # (earlier versions emitted `label[0]:`).
         result = toons.dumps({"encounters": []})
-        assert result == "encounters[0]:"
+        assert result == "encounters: []"
 
     def test_values_with_commas_get_quoted(self):
         result = toons.dumps({"items": [
