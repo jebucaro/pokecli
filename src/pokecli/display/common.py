@@ -1,10 +1,41 @@
 import json
+import re
 from types import SimpleNamespace
 
 from rich.console import Console
 from rich.table import Table
 
 from pokecli.models.common import ListResult
+
+# Matches PokeAPI's chance placeholder, with or without a trailing percent
+# sign (e.g. "$effect_chance%" or a bare "$effect_chance").
+_EFFECT_CHANCE_TOKEN = re.compile(r"\$effect_chance%?")
+
+
+def extract_effect_and_chance(
+    short_effect: str, effect_chance: int | None
+) -> tuple[str, int | None]:
+    """Split a move's effect prose from its effect chance.
+
+    PokeAPI embeds the chance in ``short_effect`` as a ``$effect_chance%``
+    token and exposes the number separately in ``effect_chance``. Rather than
+    inlining the number back into the prose, this returns clean prose (with the
+    token removed) plus the chance as a separate value, so callers can render
+    them in distinct fields.
+
+    The token is removed whether or not ``effect_chance`` is populated, so an
+    unsubstituted ``$effect_chance`` placeholder never leaks into output.
+    Whitespace and stray spacing left behind by removal are normalized.
+
+    Returns ``(clean_effect_text, effect_chance)``.
+    """
+    text = _EFFECT_CHANCE_TOKEN.sub("", short_effect)
+    # Collapse any double spaces (and " a  chance" style artifacts) and tidy
+    # spacing left before punctuation after token removal.
+    text = re.sub(r"\s{2,}", " ", text)
+    text = re.sub(r"\s+([.,;:])", r"\1", text)
+    text = text.strip()
+    return text, effect_chance
 
 METHOD_COLORS: dict[str, str] = {
     "level-up": "green",

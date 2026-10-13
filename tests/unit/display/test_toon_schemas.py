@@ -137,7 +137,34 @@ class TestMoveToon:
         assert fields["power"] == 90
         assert fields["accuracy"] == 100
         assert fields["pp"] == 15
-        assert fields["effect"] == "Has a 10% chance to paralyze the target."
+        assert fields["effect"] == "Has a chance to paralyze the target."
+        assert fields["chance"] == "10%"
+        assert "$effect_chance" not in fields["effect"]
+
+    def test_null_chance_does_not_leak_placeholder(self):
+        move = Move(
+            id=999,
+            name="mystery-move",
+            accuracy=100,
+            power=50,
+            pp=20,
+            type=_nr("normal"),
+            damage_class=_nr("physical"),
+            effect_entries=[
+                MoveEffectEntry(
+                    effect="Has a $effect_chance% chance to paralyze.",
+                    short_effect="Has a $effect_chance% chance to paralyze the target.",
+                    language=_nr("en"),
+                ),
+            ],
+            effect_chance=None,
+        )
+
+        fields = move_toon(move)
+
+        assert fields["effect"] == "Has a chance to paralyze the target."
+        assert fields["chance"] is None
+        assert "$effect_chance" not in fields["effect"]
 
     def test_none_power_and_accuracy(self):
         move = Move(
@@ -156,6 +183,7 @@ class TestMoveToon:
 
         assert fields["power"] is None
         assert fields["effect"] is None
+        assert fields["chance"] is None
 
 
 class TestAbilityToon:

@@ -184,8 +184,42 @@ def test_render_move_with_english_effects():
     console = _make_console()
     render_move(move, console)
     output = _get_output(console)
-    assert "10% chance to paralyze" in output
+    # Chance appears in its own "Effect Chance" row, not inlined in the prose.
+    assert "10%" in output
+    assert "chance to paralyze the target" in output
+    # The placeholder must never leak into output.
+    assert "$effect_chance" not in output
     assert "No English effect text" not in output
+
+
+def test_render_move_null_chance_does_not_leak_placeholder():
+    """A move whose text has the token but a null effect_chance must render
+    clean prose with no leaked placeholder and no Effect Chance row."""
+    from pokecli.models.move import MoveEffectEntry
+
+    move = Move(
+        id=999,
+        name="mystery-move",
+        accuracy=100,
+        power=50,
+        pp=20,
+        type=NamedResource(name="normal", url="http://example.com"),
+        damage_class=NamedResource(name="physical", url="http://example.com"),
+        effect_entries=[
+            MoveEffectEntry(
+                effect="Has a $effect_chance% chance to paralyze.",
+                short_effect="Has a $effect_chance% chance to paralyze the target.",
+                language=NamedResource(name="en", url="http://example.com"),
+            )
+        ],
+        effect_chance=None,
+    )
+    console = _make_console()
+    render_move(move, console)
+    output = _get_output(console)
+    assert "$effect_chance" not in output
+    assert "Effect Chance" not in output
+    assert "chance to paralyze the target" in output
 
 
 # --- render_item ---

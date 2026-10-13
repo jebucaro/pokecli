@@ -151,8 +151,8 @@ Additional modifiers appended when present: `(day)`, `(night)`, `(rain)`, `(upsi
 | Power | Base power (null for status moves) |
 | Accuracy | Hit chance percentage (null if always hits) |
 | PP | Power Points (number of uses) |
-| Effect Chance | Percentage chance of secondary effect |
-| Effect | Mechanical effect description |
+| Effect Chance | Percentage chance of secondary effect (own field, not inlined in Effect) |
+| Effect | Mechanical effect description (chance shown separately in Effect Chance) |
 
 ## Sprite Variants
 

@@ -15,6 +15,7 @@ from pokecli.models.item import Item
 from pokecli.models.berry import Berry
 from pokecli.models.evolution import EvolutionChain, ChainLink, PokemonSpecies
 from pokecli.display._evolution_helpers import describe_trigger as _describe_trigger
+from pokecli.display.common import extract_effect_and_chance
 from pokecli.models.location import Location, LocationArea, Region
 from pokecli.models.common import ListResult
 from pokecli.models.nature import Nature
@@ -56,7 +57,11 @@ def pokemon_toon(pokemon: Pokemon) -> dict:
 def move_toon(move: Move) -> dict:
     """Transform a Move into TOON fields.
 
-    Fields: id, name, type, class, power, accuracy, pp, effect.
+    Fields: id, name, type, class, power, accuracy, pp, effect, chance.
+
+    ``effect`` is clean prose with the ``$effect_chance`` token removed;
+    ``chance`` carries the effect chance (e.g. ``"10%"``) separately, or
+    ``None`` when the move has no effect chance.
     """
     effect = None
     for entry in move.effect_entries:
@@ -64,9 +69,13 @@ def move_toon(move: Move) -> dict:
             effect = entry.short_effect
             break
 
-    # Substitute effect_chance if present
-    if effect and move.effect_chance is not None:
-        effect = effect.replace("$effect_chance", str(move.effect_chance))
+    chance: str | None = None
+    if effect is not None:
+        effect, chance_value = extract_effect_and_chance(effect, move.effect_chance)
+        if chance_value is not None:
+            chance = f"{chance_value}%"
+    elif move.effect_chance is not None:
+        chance = f"{move.effect_chance}%"
 
     return {
         "id": move.id,
@@ -77,6 +86,7 @@ def move_toon(move: Move) -> dict:
         "accuracy": move.accuracy,
         "pp": move.pp,
         "effect": effect,
+        "chance": chance,
     }
 
 
