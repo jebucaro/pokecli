@@ -176,7 +176,7 @@ RESOURCES: tuple[Resource, ...] = (
     ),
     Resource(
         name="item",
-        purpose="Cost, effect, and flavor text of a held or usable item",
+        purpose="Prices, effect, and flavor text of a held or usable item",
         model=Item,
         render=render_item,
         toon=ts.item_toon,

@@ -133,7 +133,8 @@ Additional modifiers appended when present: `(day)`, `(night)`, `(rain)`, `(upsi
 |-------|-------------|
 | Name | Item name |
 | ID | Item identifier |
-| Cost | Purchase price in Pokédollars |
+| Prices | Purchase and sell price per version group and currency (purchase/sell may be null when the item cannot be bought/sold) |
+| Purchase Price | Representative purchase price in Pokédollars; a dash (table) or null (TOON) when unpurchasable |
 | Category | Item category (e.g. medicine, pokeball) |
 | Fling Power | Power when used with Fling move |
 | Effect | Short mechanical effect text |

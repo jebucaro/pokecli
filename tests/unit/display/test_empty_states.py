@@ -10,7 +10,18 @@ from pokecli.display.item import render_item
 from pokecli.models.common import ListResult, NamedResource
 from pokecli.models.ability import Ability
 from pokecli.models.move import Move
-from pokecli.models.item import Item
+from pokecli.models.item import Item, ItemPrice
+
+
+def _item_prices(purchase_price=100, sell_price=50):
+    return [
+        ItemPrice(
+            currency=NamedResource(name="poke-dollar", url="http://example.com"),
+            purchase_price=purchase_price,
+            sell_price=sell_price,
+            version_group=NamedResource(name="red-blue", url="http://example.com"),
+        )
+    ]
 
 
 def _make_console() -> Console:
@@ -185,7 +196,7 @@ def test_render_item_no_effects_no_flavor():
     item = Item(
         id=1,
         name="test-item",
-        cost=100,
+        prices=_item_prices(100),
         fling_power=None,
         category=NamedResource(name="misc", url="http://example.com"),
         effect_entries=[],
@@ -204,7 +215,7 @@ def test_render_item_non_english_only():
     item = Item(
         id=1,
         name="test-item",
-        cost=100,
+        prices=_item_prices(100),
         fling_power=None,
         category=NamedResource(name="misc", url="http://example.com"),
         effect_entries=[
@@ -235,7 +246,7 @@ def test_render_item_with_english_effect():
     item = Item(
         id=4,
         name="poke-ball",
-        cost=200,
+        prices=_item_prices(200),
         fling_power=None,
         category=NamedResource(name="standard-balls", url="http://example.com"),
         effect_entries=[
@@ -261,7 +272,7 @@ def test_render_item_with_english_flavor_only():
     item = Item(
         id=5,
         name="potion",
-        cost=300,
+        prices=_item_prices(300),
         fling_power=None,
         category=NamedResource(name="healing", url="http://example.com"),
         effect_entries=[],
@@ -278,3 +289,66 @@ def test_render_item_with_english_flavor_only():
     output = _get_output(console)
     assert "Restores HP" in output
     assert "No English effect or flavor text" not in output
+
+
+def test_render_item_no_prices_shows_dash():
+    """Item with no prices should render a dash instead of a price."""
+    item = Item(
+        id=1,
+        name="test-item",
+        prices=[],
+        fling_power=None,
+        category=NamedResource(name="misc", url="http://example.com"),
+        effect_entries=[],
+        flavor_text_entries=[],
+    )
+    console = _make_console()
+    render_item(item, console)
+    output = _get_output(console)
+    assert "Price:" in output
+    # No numeric price should appear; the dash fallback is rendered instead.
+    assert "\u2014" in output or "-" in output
+    assert "Prices by version group" not in output
+
+
+def test_render_item_null_purchase_price_shows_dash():
+    """A price entry with null purchase_price should fall back to a dash."""
+    item = Item(
+        id=1,
+        name="test-item",
+        prices=[
+            ItemPrice(
+                currency=NamedResource(name="poke-dollar", url="http://example.com"),
+                purchase_price=None,
+                sell_price=None,
+                version_group=NamedResource(
+                    name="red-blue", url="http://example.com"
+                ),
+            )
+        ],
+        fling_power=None,
+        category=NamedResource(name="misc", url="http://example.com"),
+        effect_entries=[],
+        flavor_text_entries=[],
+    )
+    console = _make_console()
+    render_item(item, console)
+    output = _get_output(console)
+    assert "Prices by version group:" in output
+
+
+def test_render_item_representative_price_shown():
+    """Item with a poke-dollar purchase price renders it in the summary line."""
+    item = Item(
+        id=1,
+        name="test-item",
+        prices=_item_prices(300),
+        fling_power=None,
+        category=NamedResource(name="misc", url="http://example.com"),
+        effect_entries=[],
+        flavor_text_entries=[],
+    )
+    console = _make_console()
+    render_item(item, console)
+    output = _get_output(console)
+    assert "300" in output

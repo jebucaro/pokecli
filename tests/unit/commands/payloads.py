@@ -156,7 +156,14 @@ MOVE = {
 ITEM = {
     "id": 1,
     "name": "master-ball",
-    "cost": 0,
+    "prices": [
+        {
+            "currency": _named("poke-dollar", "currency", 1),
+            "purchase_price": 0,
+            "sell_price": 0,
+            "version_group": _named("red-blue", "version-group", 1),
+        }
+    ],
     "category": _named("standard-balls", "item-category", 34),
     "effect_entries": [_lang()],
     "flavor_text_entries": [

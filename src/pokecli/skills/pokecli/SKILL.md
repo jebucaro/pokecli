@@ -79,7 +79,7 @@ names; trust that over this table.
 | `pokemon-form` | A specific variant such as a Mega, Alolan, or Gigantamax form |
 | `evolution-chain` | A full evolution chain addressed by its numeric chain ID |
 | `move` | Power, accuracy, PP, type, and damage class of a move |
-| `item` | Cost, effect, and flavor text of a held or usable item |
+| `item` | Prices, effect, and flavor text of a held or usable item |
 | `ability` | What an ability does and which Pokemon have it |
 | `type` | Damage relations - strengths, weaknesses, and immunities |
 | `nature` | Which stat a nature raises and which it lowers |

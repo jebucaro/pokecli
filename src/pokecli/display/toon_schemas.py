@@ -103,7 +103,8 @@ def ability_toon(ability: Ability) -> dict:
 def item_toon(item: Item) -> dict:
     """Transform an Item into TOON fields.
 
-    Fields: id, name, cost, category, effect.
+    Fields: id, name, purchase_price (representative, null when unpurchasable),
+    category, effect, prices (full per-version-group/currency breakdown).
     """
     effect = None
     for entry in item.effect_entries:
@@ -111,12 +112,23 @@ def item_toon(item: Item) -> dict:
             effect = entry.short_effect
             break
 
+    prices = [
+        {
+            "currency": p.currency.name,
+            "purchase_price": p.purchase_price,
+            "sell_price": p.sell_price,
+            "version_group": p.version_group.name,
+        }
+        for p in item.prices
+    ]
+
     return {
         "id": item.id,
         "name": item.name,
-        "cost": item.cost,
+        "purchase_price": item.representative_purchase_price(),
         "category": item.category.name,
         "effect": effect,
+        "prices": prices,
     }
 
 

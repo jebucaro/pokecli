@@ -26,7 +26,7 @@ from pokecli.models.pokemon import (
 )
 from pokecli.models.move import Move, MoveEffectEntry
 from pokecli.models.ability import Ability, AbilityEffect
-from pokecli.models.item import Item, ItemEffect
+from pokecli.models.item import Item, ItemEffect, ItemPrice
 from pokecli.models.evolution import EvolutionChain, ChainLink, EvolutionDetail
 from pokecli.models.location import Location, Region
 from pokecli.models.common import NamedResource, ListResult
@@ -192,7 +192,14 @@ class TestItemToon:
         item = Item(
             id=1,
             name="master-ball",
-            cost=0,
+            prices=[
+                ItemPrice(
+                    currency=_nr("poke-dollar"),
+                    purchase_price=0,
+                    sell_price=0,
+                    version_group=_nr("red-blue"),
+                ),
+            ],
             fling_power=None,
             category=_nr("standard-balls"),
             effect_entries=[
@@ -209,9 +216,56 @@ class TestItemToon:
 
         assert fields["id"] == 1
         assert fields["name"] == "master-ball"
-        assert fields["cost"] == 0
+        assert fields["purchase_price"] == 0
         assert fields["category"] == "standard-balls"
         assert "Catches a wild" in fields["effect"]
+        assert fields["prices"] == [
+            {
+                "currency": "poke-dollar",
+                "purchase_price": 0,
+                "sell_price": 0,
+                "version_group": "red-blue",
+            }
+        ]
+
+    def test_no_prices_gives_null_purchase_price(self):
+        item = Item(
+            id=2,
+            name="unpriced-item",
+            prices=[],
+            fling_power=None,
+            category=_nr("misc"),
+            effect_entries=[],
+            flavor_text_entries=[],
+        )
+
+        fields = item_toon(item)
+
+        assert fields["purchase_price"] is None
+        assert fields["prices"] == []
+
+    def test_null_purchase_price_entry(self):
+        item = Item(
+            id=3,
+            name="unbuyable-item",
+            prices=[
+                ItemPrice(
+                    currency=_nr("poke-dollar"),
+                    purchase_price=None,
+                    sell_price=10,
+                    version_group=_nr("red-blue"),
+                ),
+            ],
+            fling_power=None,
+            category=_nr("misc"),
+            effect_entries=[],
+            flavor_text_entries=[],
+        )
+
+        fields = item_toon(item)
+
+        assert fields["purchase_price"] is None
+        assert fields["prices"][0]["sell_price"] == 10
 
 
 class TestResourceListToon:

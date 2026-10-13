@@ -12,13 +12,26 @@ def render_item(item: Item, console: Console) -> None:
     fling = (
         f"   [bold]Fling Power:[/bold] {item.fling_power}" if item.fling_power else ""
     )
+    price = item.representative_purchase_price()
+    price_text = f"{chars.currency}{price}" if price is not None else chars.dash
     info = (
-        f"[bold]Cost:[/bold] {chars.currency}{item.cost}   "
+        f"[bold]Price:[/bold] {price_text}   "
         f"[bold]Category:[/bold] {item.category.name}"
         f"{fling}\n"
     )
     console.print(Panel(header, expand=False))
     console.print(info)
+
+    if item.prices:
+        console.print("[bold]Prices by version group:[/bold]")
+        for p in item.prices:
+            buy = f"{chars.currency}{p.purchase_price}" if p.purchase_price is not None else chars.dash
+            sell = f"{chars.currency}{p.sell_price}" if p.sell_price is not None else chars.dash
+            console.print(
+                f"  [dim]{p.version_group.name}[/dim] "
+                f"({p.currency.name}): buy {buy}, sell {sell}"
+            )
+        console.print("")
 
     english_effects = [e for e in item.effect_entries if e.language.name == "en"]
     if english_effects:

@@ -1,6 +1,3 @@
-import pytest
-from pydantic import ValidationError
-
 from pokecli.models.item import Item
 
 
@@ -8,11 +5,27 @@ def _named(name="medicine", url="https://pokeapi.co/api/v2/item-category/1/"):
     return {"name": name, "url": url}
 
 
+def _price(
+    currency="poke-dollar",
+    purchase_price=300,
+    sell_price=150,
+    version_group="red-blue",
+):
+    return {
+        "currency": _named(currency, "https://pokeapi.co/api/v2/currency/1/"),
+        "purchase_price": purchase_price,
+        "sell_price": sell_price,
+        "version_group": _named(
+            version_group, "https://pokeapi.co/api/v2/version-group/1/"
+        ),
+    }
+
+
 def _make_item(**overrides):
     base = {
         "id": 17,
         "name": "potion",
-        "cost": 300,
+        "prices": [_price()],
         "fling_power": None,
         "category": _named("medicine"),
         "effect_entries": [
@@ -41,7 +54,10 @@ class TestItem:
         item = Item.model_validate(_make_item())
         assert item.id == 17
         assert item.name == "potion"
-        assert item.cost == 300
+        assert item.prices[0].purchase_price == 300
+        assert item.prices[0].sell_price == 150
+        assert item.prices[0].currency.name == "poke-dollar"
+        assert item.prices[0].version_group.name == "red-blue"
 
     def test_fling_power_nullable(self):
         item = Item.model_validate(_make_item(fling_power=None))
@@ -65,11 +81,22 @@ class TestItem:
         item = Item.model_validate(_make_item(flavor_text_entries=[]))
         assert item.flavor_text_entries == []
 
-    def test_missing_cost_raises(self):
+    def test_missing_prices_defaults_empty(self):
         data = _make_item()
-        del data["cost"]
-        with pytest.raises(ValidationError):
-            Item.model_validate(data)
+        del data["prices"]
+        item = Item.model_validate(data)
+        assert item.prices == []
+
+    def test_empty_prices(self):
+        item = Item.model_validate(_make_item(prices=[]))
+        assert item.prices == []
+
+    def test_null_purchase_and_sell_price(self):
+        item = Item.model_validate(
+            _make_item(prices=[_price(purchase_price=None, sell_price=None)])
+        )
+        assert item.prices[0].purchase_price is None
+        assert item.prices[0].sell_price is None
 
     def test_effect_entry_language(self):
         item = Item.model_validate(_make_item())
